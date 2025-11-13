@@ -5,9 +5,6 @@
 - [Estrategia de Testing](#estrategia-de-testing)
 - [Pruebas Unitarias](#pruebas-unitarias)
 - [Pruebas de Integración](#pruebas-de-integración)
-- [Ejecución de Tests](#ejecución-de-tests)
-- [Mocking y Stubs](#mocking-y-stubs)
-- [Buenas Prácticas](#buenas-prácticas)
 
 ---
 
