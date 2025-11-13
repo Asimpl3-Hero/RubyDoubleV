@@ -30,6 +30,7 @@ Sistema de microservicios para facturación electrónica construido con Ruby, ap
 ✅ **API REST** con respuestas JSON <br>
 ✅ **Documentación interactiva** con Swagger UI (OpenAPI 3.0) <br>
 ✅ **Pruebas unitarias** para lógica de dominio <br>
+✅ **Pruebas de integración** para comunicación entre microservicios <br>
 ✅ **Docker** y **Docker Compose** para deployment <br>
 ✅ **Comunicación entre servicios** vía HTTP REST <br>
 
@@ -169,16 +170,19 @@ curl http://localhost:4003/health  # Auditoría
 Cada servicio incluye documentación interactiva con Swagger UI basada en especificaciones OpenAPI 3.0:
 
 #### Servicio de Clientes
+
 **URL:** http://localhost:4001/docs
 
 ![Swagger UI - Clientes Service](public/images/SwaggerImageClients.png)
 
 #### Servicio de Facturas
+
 **URL:** http://localhost:4002/docs
 
 ![Swagger UI - Facturas Service](public/images/SwaggerImageFacture.png)
 
 #### Servicio de Auditoría
+
 **URL:** http://localhost:4003/docs
 
 ![Swagger UI - Auditoría Service](public/images/SwaggerImageAuditory.png)
@@ -186,6 +190,7 @@ Cada servicio incluye documentación interactiva con Swagger UI basada en especi
 ---
 
 **Especificaciones OpenAPI (YAML):**
+
 ```bash
 http://localhost:4001/api-docs  # Clientes OpenAPI Spec
 http://localhost:4002/api-docs  # Facturas OpenAPI Spec
@@ -361,13 +366,28 @@ RubyDoubleV/
 │   │       └── persistence/       # Implementación de repositorios
 │   ├── config/                    # Configuración
 │   ├── db/                        # Migraciones y BD
-│   ├── spec/                      # Pruebas unitarias
+│   ├── spec/                      # Tests
+│   │   ├── domain/                # Tests unitarios
+│   │   ├── integration/           # Tests de integración
+│   │   ├── spec_helper.rb
+│   │   └── integration_spec_helper.rb
 │   ├── Gemfile
 │   ├── config.ru
 │   └── Dockerfile
 │
 ├── facturas-service/              # Microservicio de Facturas
-│   └── (estructura similar a clientes-service)
+│   ├── app/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   └── infrastructure/
+│   ├── spec/
+│   │   ├── domain/                # Tests unitarios
+│   │   ├── integration/           # Tests de integración
+│   │   ├── spec_helper.rb
+│   │   └── integration_spec_helper.rb
+│   └── (otros archivos)
 │
 ├── auditoria-service/             # Microservicio de Auditoría
 │   ├── app/
@@ -380,7 +400,8 @@ RubyDoubleV/
 │   └── Dockerfile
 │
 ├── docs/                          # Documentación
-│   └── ARQUITECTURA.md
+│   ├── ARQUITECTURA.md
+│   └── TESTING.md                 # Guía completa de testing
 │
 ├── db/                            # Scripts de BD
 │   ├── init_oracle.sql
@@ -446,6 +467,101 @@ Los servicios de **Clientes** y **Facturas** implementan Clean Architecture con 
 - Base de datos por servicio
 - Comunicación vía API REST
 - Despliegue autónomo
+
+## Testing
+
+El proyecto incluye dos niveles de testing para garantizar calidad y confiabilidad.
+
+📚 **[Ver documentación completa de testing](docs/TESTING.md)** con ejemplos detallados, estrategias y buenas prácticas.
+
+### Pruebas Unitarias (Domain Layer)
+
+Validan la lógica de negocio pura sin dependencias externas.
+
+**Servicio de Clientes:**
+
+```bash
+cd clientes-service
+bundle exec rspec spec/domain/
+```
+
+**Servicio de Facturas:**
+
+```bash
+cd facturas-service
+bundle exec rspec spec/domain/
+```
+
+**Ejemplo de salida:**
+
+```
+Domain::Entities::Cliente
+  #initialize
+    with valid attributes
+      ✓ creates a cliente successfully
+    with invalid attributes
+      ✓ raises ArgumentError when nombre is empty
+      ✓ raises ArgumentError when identificacion is empty
+      ✓ raises ArgumentError when correo is empty
+      ✓ raises ArgumentError when correo format is invalid
+```
+
+### Pruebas de Integración (Microservices Communication)
+
+Validan el flujo completo entre microservicios: Cliente → Factura → Auditoría.
+
+**Requisitos previos:**
+
+```bash
+# Instalar dependencias de testing
+cd clientes-service && bundle install
+cd ../facturas-service && bundle install
+```
+
+**Ejecutar tests de integración:**
+
+```bash
+# Test: Clientes → Auditoría
+cd clientes-service
+bundle exec rspec spec/integration/
+
+# Test: Facturas → Clientes → Auditoría (flujo completo)
+cd facturas-service
+bundle exec rspec spec/integration/
+```
+
+**Cobertura de tests de integración:**
+
+**Clientes Service:**
+- ✅ Creación de cliente y registro en auditoría
+- ✅ Consulta de cliente y evento de auditoría
+- ✅ Listado de clientes y evento de auditoría
+- ✅ Manejo de errores con registro en auditoría
+- ✅ Resiliencia cuando servicio de auditoría falla
+
+**Facturas Service:**
+- ✅ Flujo completo: validar cliente → crear factura → registrar auditoría
+- ✅ Validación de cliente inexistente
+- ✅ Filtrado por rango de fechas
+- ✅ Validaciones de negocio (monto > 0, fecha válida)
+- ✅ Resiliencia cuando servicios externos fallan
+- ✅ Circuit breaker pattern (auditoría no crítica)
+
+**Ejecutar todos los tests:**
+
+```bash
+# Desde la raíz del proyecto
+./scripts/test.sh
+```
+
+### Tecnologías de Testing
+
+- **RSpec**: Framework de testing
+- **Rack::Test**: Testing de endpoints HTTP
+- **WebMock**: Mock de llamadas HTTP entre servicios
+- **DatabaseCleaner**: Aislamiento de base de datos entre tests
+- **FactoryBot**: Generación de datos de prueba
+- **Faker**: Datos aleatorios realistas
 
 ## Configuración para Oracle (Producción)
 

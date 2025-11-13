@@ -30,4 +30,5 @@ group :development, :test do
   gem 'database_cleaner-active_record', '~> 2.1'
   gem 'factory_bot', '~> 6.2'
   gem 'faker', '~> 3.2'
+  gem 'webmock', '~> 3.19'
 end
