@@ -1,5 +1,11 @@
 # FactuMarket - Sistema de Facturación Electrónica
 
+![Ruby](https://img.shields.io/badge/Ruby-3.2+-CC342D?style=for-the-badge&logo=ruby&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Oracle](https://img.shields.io/badge/Oracle-F80000?style=for-the-badge&logo=oracle&logoColor=white)
+
 Sistema de microservicios para facturación electrónica construido con Ruby, aplicando **Clean Architecture**, **MVC** y utilizando bases de datos **Oracle/SQLite** (transaccional) y **MongoDB** (auditoría).
 
 ## Índice
