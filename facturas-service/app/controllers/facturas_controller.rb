@@ -1,0 +1,116 @@
+# Controller Layer (MVC) - Handles HTTP requests and responses
+
+require 'sinatra/base'
+require 'json'
+require_relative '../application/use_cases/create_factura'
+require_relative '../application/use_cases/get_factura'
+require_relative '../application/use_cases/list_facturas'
+require_relative '../infrastructure/persistence/active_record_factura_repository'
+
+class FacturasController < Sinatra::Base
+  configure do
+    set :show_exceptions, false
+  end
+
+  before do
+    content_type :json
+  end
+
+  # POST /facturas - Create a new factura
+  post '/facturas' do
+    data = JSON.parse(request.body.read)
+
+    use_case = Application::UseCases::CreateFactura.new(
+      factura_repository: repository,
+      clientes_service_url: clientes_url,
+      auditoria_service_url: auditoria_url
+    )
+
+    factura = use_case.execute(
+      cliente_id: data['cliente_id'],
+      fecha_emision: data['fecha_emision'],
+      monto: data['monto'],
+      items: data['items'] || []
+    )
+
+    status 201
+    {
+      success: true,
+      message: 'Factura creada exitosamente',
+      data: factura.to_h
+    }.to_json
+  rescue ArgumentError => e
+    status 400
+    { success: false, error: e.message }.to_json
+  rescue StandardError => e
+    status 500
+    { success: false, error: e.message }.to_json
+  end
+
+  # GET /facturas/:id - Get factura by ID
+  get '/facturas/:id' do
+    use_case = Application::UseCases::GetFactura.new(
+      factura_repository: repository,
+      auditoria_service_url: auditoria_url
+    )
+
+    factura = use_case.execute(id: params[:id].to_i)
+
+    status 200
+    {
+      success: true,
+      data: factura.to_h
+    }.to_json
+  rescue StandardError => e
+    status 404
+    { success: false, error: e.message }.to_json
+  end
+
+  # GET /facturas - List facturas with optional date range filter
+  get '/facturas' do
+    use_case = Application::UseCases::ListFacturas.new(
+      factura_repository: repository,
+      auditoria_service_url: auditoria_url
+    )
+
+    facturas = use_case.execute(
+      fecha_inicio: params['fechaInicio'],
+      fecha_fin: params['fechaFin']
+    )
+
+    status 200
+    {
+      success: true,
+      data: facturas.map(&:to_h),
+      count: facturas.count
+    }.to_json
+  rescue StandardError => e
+    status 500
+    { success: false, error: e.message }.to_json
+  end
+
+  # Health check endpoint
+  get '/health' do
+    status 200
+    {
+      success: true,
+      service: 'facturas-service',
+      status: 'running',
+      timestamp: Time.now.utc.iso8601
+    }.to_json
+  end
+
+  private
+
+  def repository
+    @repository ||= Infrastructure::Persistence::ActiveRecordFacturaRepository.new
+  end
+
+  def clientes_url
+    ENV['CLIENTES_SERVICE_URL'] || 'http://localhost:4001'
+  end
+
+  def auditoria_url
+    ENV['AUDITORIA_SERVICE_URL'] || 'http://localhost:4003'
+  end
+end
