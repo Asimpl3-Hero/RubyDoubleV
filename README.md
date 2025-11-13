@@ -28,82 +28,17 @@ Sistema de microservicios para facturación electrónica construido con Ruby, ap
 
 ## Arquitectura
 
-El sistema está compuesto por 3 microservicios independientes:
-
-```mermaid
-graph TB
-    subgraph "FactuMarket - Sistema de Facturación Electrónica"
-        Client[Cliente HTTP]
-
-        subgraph "Microservicios"
-            CS[Servicio de Clientes<br/>Puerto 4001<br/>Clean Arch + MVC]
-            FS[Servicio de Facturas<br/>Puerto 4002<br/>Clean Arch + MVC]
-            AS[Servicio de Auditoría<br/>Puerto 4003<br/>MVC + NoSQL]
-        end
-
-        subgraph "Bases de Datos"
-            DBCS[(SQLite/Oracle<br/>Clientes)]
-            DBFS[(SQLite/Oracle<br/>Facturas)]
-            DBAS[(MongoDB<br/>Eventos)]
-        end
-
-        Client -->|REST API| CS
-        Client -->|REST API| FS
-        Client -->|REST API| AS
-
-        CS -->|Persiste| DBCS
-        FS -->|Persiste| DBFS
-        AS -->|Persiste| DBAS
-
-        FS -->|Valida Cliente| CS
-        CS -->|Registra Evento| AS
-        FS -->|Registra Evento| AS
-    end
-
-    style CS fill:#e1f5ff
-    style FS fill:#e1f5ff
-    style AS fill:#fff4e1
-    style DBCS fill:#d4edda
-    style DBFS fill:#d4edda
-    style DBAS fill:#f8d7da
-```
-
-### Comunicación entre Servicios
-
-```mermaid
-sequenceDiagram
-    participant Usuario
-    participant Clientes
-    participant Facturas
-    participant Auditoría
-    participant DB_Oracle
-    participant DB_Mongo
-
-    Usuario->>+Clientes: POST /clientes
-    Clientes->>+DB_Oracle: INSERT cliente
-    DB_Oracle-->>-Clientes: OK
-    Clientes->>Auditoría: POST /auditoria (async)
-    Clientes-->>-Usuario: 201 Created
-
-    Usuario->>+Facturas: POST /facturas
-    Facturas->>+Clientes: GET /clientes/:id
-    Clientes-->>-Facturas: Cliente data
-    Facturas->>+DB_Oracle: INSERT factura
-    DB_Oracle-->>-Facturas: OK
-    Facturas->>Auditoría: POST /auditoria (async)
-    Facturas-->>-Usuario: 201 Created
-
-    Auditoría->>+DB_Mongo: INSERT evento
-    DB_Mongo-->>-Auditoría: OK
-```
+El sistema está compuesto por 3 microservicios:
 
 ### 1. **Servicio de Clientes** (Puerto 4001)
+
 - Gestión de clientes (CRUD)
 - Persistencia en Oracle/SQLite
 - Clean Architecture + MVC
 - Registro de eventos en Auditoría
 
 ### 2. **Servicio de Facturas** (Puerto 4002)
+
 - Creación y gestión de facturas electrónicas
 - Validación de clientes (integración con servicio de Clientes)
 - Persistencia en Oracle/SQLite
@@ -111,6 +46,7 @@ sequenceDiagram
 - Registro de eventos en Auditoría
 
 ### 3. **Servicio de Auditoría** (Puerto 4003)
+
 - Registro de todos los eventos del sistema
 - Persistencia en MongoDB (NoSQL)
 - Consulta de eventos por entidad
@@ -146,6 +82,7 @@ docker-compose up --build
 ```
 
 Los servicios estarán disponibles en:
+
 - Clientes Service: http://localhost:4001
 - Facturas Service: http://localhost:4002
 - Auditoría Service: http://localhost:4003
@@ -220,27 +157,6 @@ curl http://localhost:4002/health  # Facturas
 curl http://localhost:4003/health  # Auditoría
 ```
 
-## Testing
-
-### Ejecutar todas las pruebas
-
-```bash
-chmod +x scripts/test.sh
-./scripts/test.sh
-```
-
-### Ejecutar pruebas por servicio
-
-```bash
-# Clientes Service
-cd clientes-service
-bundle exec rspec
-
-# Facturas Service
-cd facturas-service
-bundle exec rspec
-```
-
 ## Documentación de APIs
 
 ### Servicio de Clientes (Puerto 4001)
@@ -259,6 +175,7 @@ curl -X POST http://localhost:4001/clientes \
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -318,6 +235,7 @@ curl -X POST http://localhost:4002/facturas \
 ```
 
 **Respuesta:**
+
 ```json
 {
   "success": true,
@@ -453,15 +371,18 @@ RubyDoubleV/
 Los servicios de **Clientes** y **Facturas** implementan Clean Architecture con 4 capas:
 
 1. **Domain Layer** (`app/domain/`): Lógica de negocio pura
+
    - Entidades con validaciones
    - Interfaces de repositorios
    - Sin dependencias externas
 
 2. **Application Layer** (`app/application/`): Casos de uso
+
    - Orquestación de lógica de negocio
    - Coordinación entre entidades y repositorios
 
 3. **Infrastructure Layer** (`app/infrastructure/`): Adaptadores
+
    - Implementación de repositorios con ActiveRecord
    - Conexión con bases de datos
 
@@ -512,16 +433,8 @@ sqlplus factumarket_user/password@localhost:1521/XEPDB1 < db/init_oracle.sql
 
 ## Contribución
 
-Este proyecto fue desarrollado como prueba técnica para Double V Partners.
+Este proyecto fue desarrollado como prueba técnica para el equipo de Double V Partners.
 
 ## Autor
 
-Desarrollado por [Tu Nombre]
-
-## Licencia
-
-[Especificar licencia]
-
----
-
-**Nota**: Este sistema utiliza SQLite para desarrollo. Para producción, se recomienda Oracle Database y configurar MongoDB con replica sets para alta disponibilidad.
+Desarrollado por Justin Hernandez Tobinson.
