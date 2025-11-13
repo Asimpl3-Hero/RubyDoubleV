@@ -107,7 +107,7 @@ class AuditoriaController < Sinatra::Base
   # OpenAPI specification endpoint
   get '/api-docs' do
     content_type 'application/yaml'
-    File.read(File.join(settings.root, '..', 'public', 'openapi.yaml'))
+    File.read(File.join(settings.root, '..', '..', 'public', 'openapi.yaml'))
   end
 
   # Swagger UI endpoint
