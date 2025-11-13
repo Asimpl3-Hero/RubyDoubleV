@@ -1,0 +1,9 @@
+.git
+.gitignore
+README.md
+docs/
+*.md
+.env
+db/*.sqlite3
+log/
+tmp/
