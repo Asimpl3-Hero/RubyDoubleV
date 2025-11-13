@@ -28,7 +28,74 @@ Sistema de microservicios para facturación electrónica construido con Ruby, ap
 
 ## Arquitectura
 
-El sistema está compuesto por 3 microservicios:
+El sistema está compuesto por 3 microservicios independientes:
+
+```mermaid
+graph TB
+    subgraph "FactuMarket - Sistema de Facturación Electrónica"
+        Client[Cliente HTTP]
+
+        subgraph "Microservicios"
+            CS[Servicio de Clientes<br/>Puerto 4001<br/>Clean Arch + MVC]
+            FS[Servicio de Facturas<br/>Puerto 4002<br/>Clean Arch + MVC]
+            AS[Servicio de Auditoría<br/>Puerto 4003<br/>MVC + NoSQL]
+        end
+
+        subgraph "Bases de Datos"
+            DBCS[(SQLite/Oracle<br/>Clientes)]
+            DBFS[(SQLite/Oracle<br/>Facturas)]
+            DBAS[(MongoDB<br/>Eventos)]
+        end
+
+        Client -->|REST API| CS
+        Client -->|REST API| FS
+        Client -->|REST API| AS
+
+        CS -->|Persiste| DBCS
+        FS -->|Persiste| DBFS
+        AS -->|Persiste| DBAS
+
+        FS -->|Valida Cliente| CS
+        CS -->|Registra Evento| AS
+        FS -->|Registra Evento| AS
+    end
+
+    style CS fill:#e1f5ff
+    style FS fill:#e1f5ff
+    style AS fill:#fff4e1
+    style DBCS fill:#d4edda
+    style DBFS fill:#d4edda
+    style DBAS fill:#f8d7da
+```
+
+### Comunicación entre Servicios
+
+```mermaid
+sequenceDiagram
+    participant Usuario
+    participant Clientes
+    participant Facturas
+    participant Auditoría
+    participant DB_Oracle
+    participant DB_Mongo
+
+    Usuario->>+Clientes: POST /clientes
+    Clientes->>+DB_Oracle: INSERT cliente
+    DB_Oracle-->>-Clientes: OK
+    Clientes->>Auditoría: POST /auditoria (async)
+    Clientes-->>-Usuario: 201 Created
+
+    Usuario->>+Facturas: POST /facturas
+    Facturas->>+Clientes: GET /clientes/:id
+    Clientes-->>-Facturas: Cliente data
+    Facturas->>+DB_Oracle: INSERT factura
+    DB_Oracle-->>-Facturas: OK
+    Facturas->>Auditoría: POST /auditoria (async)
+    Facturas-->>-Usuario: 201 Created
+
+    Auditoría->>+DB_Mongo: INSERT evento
+    DB_Mongo-->>-Auditoría: OK
+```
 
 ### 1. **Servicio de Clientes** (Puerto 4001)
 - Gestión de clientes (CRUD)
