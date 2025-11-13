@@ -1,0 +1,108 @@
+# Controller Layer (MVC) - Handles HTTP requests and responses
+
+require 'sinatra/base'
+require 'json'
+require_relative '../application/use_cases/create_cliente'
+require_relative '../application/use_cases/get_cliente'
+require_relative '../application/use_cases/list_clientes'
+require_relative '../infrastructure/persistence/active_record_cliente_repository'
+
+class ClientesController < Sinatra::Base
+  configure do
+    set :show_exceptions, false
+  end
+
+  before do
+    content_type :json
+  end
+
+  # POST /clientes - Create a new cliente
+  post '/clientes' do
+    data = JSON.parse(request.body.read)
+
+    use_case = Application::UseCases::CreateCliente.new(
+      cliente_repository: repository,
+      auditoria_service_url: auditoria_url
+    )
+
+    cliente = use_case.execute(
+      nombre: data['nombre'],
+      identificacion: data['identificacion'],
+      correo: data['correo'],
+      direccion: data['direccion']
+    )
+
+    status 201
+    {
+      success: true,
+      message: 'Cliente creado exitosamente',
+      data: cliente.to_h
+    }.to_json
+  rescue ArgumentError => e
+    status 400
+    { success: false, error: e.message }.to_json
+  rescue StandardError => e
+    status 500
+    { success: false, error: e.message }.to_json
+  end
+
+  # GET /clientes/:id - Get cliente by ID
+  get '/clientes/:id' do
+    use_case = Application::UseCases::GetCliente.new(
+      cliente_repository: repository,
+      auditoria_service_url: auditoria_url
+    )
+
+    cliente = use_case.execute(id: params[:id].to_i)
+
+    status 200
+    {
+      success: true,
+      data: cliente.to_h
+    }.to_json
+  rescue StandardError => e
+    status 404
+    { success: false, error: e.message }.to_json
+  end
+
+  # GET /clientes - List all clientes
+  get '/clientes' do
+    use_case = Application::UseCases::ListClientes.new(
+      cliente_repository: repository,
+      auditoria_service_url: auditoria_url
+    )
+
+    clientes = use_case.execute
+
+    status 200
+    {
+      success: true,
+      data: clientes.map(&:to_h),
+      count: clientes.count
+    }.to_json
+  rescue StandardError => e
+    status 500
+    { success: false, error: e.message }.to_json
+  end
+
+  # Health check endpoint
+  get '/health' do
+    status 200
+    {
+      success: true,
+      service: 'clientes-service',
+      status: 'running',
+      timestamp: Time.now.utc.iso8601
+    }.to_json
+  end
+
+  private
+
+  def repository
+    @repository ||= Infrastructure::Persistence::ActiveRecordClienteRepository.new
+  end
+
+  def auditoria_url
+    ENV['AUDITORIA_SERVICE_URL'] || 'http://localhost:4003'
+  end
+end
