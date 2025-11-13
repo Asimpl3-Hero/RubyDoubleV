@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # MongoDB for Auditoría Service
+  mongodb:
+    image: mongo:7.0
+    container_name: factumarket-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: auditoria_db
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - factumarket-network
+
+  # Auditoría Service
+  auditoria-service:
+    build:
+      context: ./auditoria-service
+      dockerfile: Dockerfile
+    container_name: factumarket-auditoria
+    restart: unless-stopped
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+      - MONGO_URL=mongodb:27017
+      - MONGO_DATABASE=auditoria_db
+      - RACK_ENV=development
+    depends_on:
+      - mongodb
+    volumes:
+      - ./auditoria-service:/app
+    networks:
+      - factumarket-network
+    command: bundle exec puma config.ru -p 4003 -e development
+
+  # Clientes Service
+  clientes-service:
+    build:
+      context: ./clientes-service
+      dockerfile: Dockerfile
+    container_name: factumarket-clientes
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - DATABASE_URL=sqlite3:db/clientes.sqlite3
+      - AUDITORIA_SERVICE_URL=http://auditoria-service:4003
+      - RACK_ENV=development
+    depends_on:
+      - auditoria-service
+    volumes:
+      - ./clientes-service:/app
+    networks:
+      - factumarket-network
+    command: >
+      sh -c "bundle exec rake db:migrate &&
+             bundle exec puma config.ru -p 4001 -e development"
+
+  # Facturas Service
+  facturas-service:
+    build:
+      context: ./facturas-service
+      dockerfile: Dockerfile
+    container_name: factumarket-facturas
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - DATABASE_URL=sqlite3:db/facturas.sqlite3
+      - CLIENTES_SERVICE_URL=http://clientes-service:4001
+      - AUDITORIA_SERVICE_URL=http://auditoria-service:4003
+      - RACK_ENV=development
+    depends_on:
+      - clientes-service
+      - auditoria-service
+    volumes:
+      - ./facturas-service:/app
+    networks:
+      - factumarket-network
+    command: >
+      sh -c "bundle exec rake db:migrate &&
+             bundle exec puma config.ru -p 4002 -e development"
+
+networks:
+  factumarket-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
