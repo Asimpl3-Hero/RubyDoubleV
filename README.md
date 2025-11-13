@@ -168,13 +168,25 @@ curl http://localhost:4003/health  # Auditoría
 
 Cada servicio incluye documentación interactiva con Swagger UI basada en especificaciones OpenAPI 3.0:
 
-```bash
-# Swagger UI (Interfaz visual interactiva)
-http://localhost:4001/docs  # Clientes Service
-http://localhost:4002/docs  # Facturas Service
-http://localhost:4003/docs  # Auditoría Service
+#### Servicio de Clientes
+**URL:** http://localhost:4001/docs
 
-# Especificaciones OpenAPI (YAML)
+![Swagger UI - Clientes Service](public/images/SwaggerImageClients.png)
+
+#### Servicio de Facturas
+**URL:** http://localhost:4002/docs
+
+![Swagger UI - Facturas Service](public/images/SwaggerImageFacture.png)
+
+#### Servicio de Auditoría
+**URL:** http://localhost:4003/docs
+
+![Swagger UI - Auditoría Service](public/images/SwaggerImageAuditory.png)
+
+---
+
+**Especificaciones OpenAPI (YAML):**
+```bash
 http://localhost:4001/api-docs  # Clientes OpenAPI Spec
 http://localhost:4002/api-docs  # Facturas OpenAPI Spec
 http://localhost:4003/api-docs  # Auditoría OpenAPI Spec
