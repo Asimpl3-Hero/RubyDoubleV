@@ -1,0 +1,24 @@
+development:
+  adapter: sqlite3
+  database: db/facturas.sqlite3
+  pool: 5
+  timeout: 5000
+
+test:
+  adapter: sqlite3
+  database: db/facturas_test.sqlite3
+  pool: 5
+  timeout: 5000
+
+production:
+  adapter: sqlite3
+  database: db/facturas.sqlite3
+  pool: 5
+  timeout: 5000
+
+# For Oracle production environment (uncomment and configure):
+# production:
+#   adapter: oracle_enhanced
+#   database: //localhost:1521/XEPDB1
+#   username: <%= ENV['ORACLE_USER'] %>
+#   password: <%= ENV['ORACLE_PASSWORD'] %>
