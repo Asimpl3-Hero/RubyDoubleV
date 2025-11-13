@@ -1,0 +1,313 @@
+openapi: 3.0.3
+info:
+  title: Auditoría Service API
+  description: |
+    API REST para el registro y consulta de eventos de auditoría del sistema FactuMarket.
+    Este microservicio almacena todos los eventos de auditoría en MongoDB.
+  version: 1.0.0
+  contact:
+    name: FactuMarket API Support
+servers:
+  - url: http://localhost:4003
+    description: Servidor de desarrollo
+  - url: http://auditoria-service:4003
+    description: Servidor Docker interno
+
+tags:
+  - name: auditoria
+    description: Operaciones sobre eventos de auditoría
+  - name: health
+    description: Verificación de estado del servicio
+
+paths:
+  /auditoria:
+    post:
+      tags:
+        - auditoria
+      summary: Registrar un evento de auditoría
+      description: Crea un nuevo evento de auditoría en MongoDB
+      operationId: createAuditEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - entity_type
+                - entity_id
+                - action
+              properties:
+                entity_type:
+                  type: string
+                  description: Tipo de entidad auditada
+                  enum: [Cliente, Factura]
+                  example: Cliente
+                entity_id:
+                  type: integer
+                  description: ID de la entidad auditada
+                  example: 1
+                action:
+                  type: string
+                  description: Acción realizada
+                  enum: [create, read, update, delete, list]
+                  example: create
+                details:
+                  type: object
+                  description: Detalles adicionales del evento
+                  additionalProperties: true
+                  example:
+                    nombre: Juan Pérez
+                    correo: juan.perez@example.com
+                status:
+                  type: string
+                  description: Estado del evento
+                  enum: [success, error]
+                  example: success
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: Timestamp del evento (opcional, se genera automáticamente si no se provee)
+                  example: "2025-01-13T12:00:00Z"
+      responses:
+        '201':
+          description: Evento de auditoría registrado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Evento de auditoría registrado
+                  data:
+                    $ref: '#/components/schemas/AuditEvent'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - auditoria
+      summary: Listar eventos de auditoría
+      description: Obtiene eventos de auditoría con filtros opcionales por acción, estado o límite
+      operationId: listAuditEvents
+      parameters:
+        - name: action
+          in: query
+          required: false
+          description: Filtrar por acción específica
+          schema:
+            type: string
+            enum: [create, read, update, delete, list]
+            example: create
+        - name: status
+          in: query
+          required: false
+          description: Filtrar por estado del evento
+          schema:
+            type: string
+            enum: [success, error]
+            example: success
+        - name: limit
+          in: query
+          required: false
+          description: Número máximo de eventos a retornar
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+            example: 50
+      responses:
+        '200':
+          description: Lista de eventos de auditoría obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEvent'
+                  count:
+                    type: integer
+                    description: Número de eventos retornados
+                    example: 50
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auditoria/{factura_id}:
+    get:
+      tags:
+        - auditoria
+      summary: Obtener eventos de auditoría por factura
+      description: Recupera todos los eventos de auditoría asociados a una factura específica
+      operationId: getAuditEventsByFactura
+      parameters:
+        - name: factura_id
+          in: path
+          required: true
+          description: ID de la factura
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Eventos encontrados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEvent'
+                  count:
+                    type: integer
+                    example: 5
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auditoria/cliente/{cliente_id}:
+    get:
+      tags:
+        - auditoria
+      summary: Obtener eventos de auditoría por cliente
+      description: Recupera todos los eventos de auditoría asociados a un cliente específico
+      operationId: getAuditEventsByCliente
+      parameters:
+        - name: cliente_id
+          in: path
+          required: true
+          description: ID del cliente
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Eventos encontrados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEvent'
+                  count:
+                    type: integer
+                    example: 10
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Verificar estado del servicio
+      description: Endpoint para verificar que el servicio está funcionando correctamente
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Servicio funcionando correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  service:
+                    type: string
+                    example: auditoria-service
+                  status:
+                    type: string
+                    example: running
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-01-13T12:00:00Z"
+
+components:
+  schemas:
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID único del evento (MongoDB ObjectId)
+          example: "507f1f77bcf86cd799439011"
+        entity_type:
+          type: string
+          description: Tipo de entidad auditada
+          enum: [Cliente, Factura]
+          example: Cliente
+        entity_id:
+          type: integer
+          description: ID de la entidad auditada
+          example: 1
+        action:
+          type: string
+          description: Acción realizada
+          enum: [create, read, update, delete, list]
+          example: create
+        details:
+          type: object
+          description: Detalles adicionales del evento
+          additionalProperties: true
+          example:
+            nombre: Juan Pérez
+            correo: juan.perez@example.com
+        status:
+          type: string
+          description: Estado del evento
+          enum: [success, error]
+          example: success
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp del evento
+          example: "2025-01-13T12:00:00Z"
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Mensaje de error
+          example: Error al registrar evento de auditoría

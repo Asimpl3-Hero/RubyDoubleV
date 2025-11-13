@@ -104,6 +104,52 @@ class AuditoriaController < Sinatra::Base
     }.to_json
   end
 
+  # OpenAPI specification endpoint
+  get '/api-docs' do
+    content_type 'application/yaml'
+    File.read(File.join(settings.root, '..', 'public', 'openapi.yaml'))
+  end
+
+  # Swagger UI endpoint
+  get '/docs' do
+    content_type :html
+    <<~HTML
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Auditoría Service API - Swagger UI</title>
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css">
+        <style>
+          body { margin: 0; padding: 0; }
+        </style>
+      </head>
+      <body>
+        <div id="swagger-ui"></div>
+        <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-bundle.js"></script>
+        <script src="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui-standalone-preset.js"></script>
+        <script>
+          window.onload = function() {
+            SwaggerUIBundle({
+              url: "/api-docs",
+              dom_id: '#swagger-ui',
+              deepLinking: true,
+              presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+              ],
+              plugins: [
+                SwaggerUIBundle.plugins.DownloadUrl
+              ],
+              layout: "StandaloneLayout"
+            });
+          };
+        </script>
+      </body>
+      </html>
+    HTML
+  end
+
   private
 
   def repository

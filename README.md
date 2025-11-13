@@ -22,6 +22,7 @@ Sistema de microservicios para facturación electrónica construido con Ruby, ap
 ✅ **Base de datos Oracle/SQLite** para datos transaccionales
 ✅ **MongoDB** para registro de eventos de auditoría
 ✅ **API REST** con respuestas JSON
+✅ **Documentación interactiva** con Swagger UI (OpenAPI 3.0)
 ✅ **Pruebas unitarias** para lógica de dominio
 ✅ **Docker** y **Docker Compose** para deployment
 ✅ **Comunicación entre servicios** vía HTTP REST
@@ -156,6 +157,29 @@ curl http://localhost:4001/health  # Clientes
 curl http://localhost:4002/health  # Facturas
 curl http://localhost:4003/health  # Auditoría
 ```
+
+### Documentación Interactiva con Swagger UI
+
+Cada servicio incluye documentación interactiva con Swagger UI basada en especificaciones OpenAPI 3.0:
+
+```bash
+# Swagger UI (Interfaz visual interactiva)
+http://localhost:4001/docs  # Clientes Service
+http://localhost:4002/docs  # Facturas Service
+http://localhost:4003/docs  # Auditoría Service
+
+# Especificaciones OpenAPI (YAML)
+http://localhost:4001/api-docs  # Clientes OpenAPI Spec
+http://localhost:4002/api-docs  # Facturas OpenAPI Spec
+http://localhost:4003/api-docs  # Auditoría OpenAPI Spec
+```
+
+**Características de Swagger UI:**
+- Documentación completa de todos los endpoints
+- Ejemplos de request/response
+- Pruebas interactivas (Try it out)
+- Esquemas de datos con validaciones
+- Filtrado por tags (clientes, facturas, auditoría, health)
 
 ## Documentación de APIs
 
@@ -362,6 +386,7 @@ RubyDoubleV/
 - **HTTParty**: Cliente HTTP para comunicación entre servicios
 - **RSpec**: Testing framework
 - **Dry-Validation**: Validaciones de datos
+- **OpenAPI 3.0 & Swagger UI**: Documentación interactiva de APIs
 - **Docker & Docker Compose**: Containerización
 
 ## Aplicación de Principios

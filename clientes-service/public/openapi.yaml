@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: Clientes Service API
+  description: |
+    API REST para la gestión de clientes del sistema FactuMarket.
+    Este microservicio maneja todas las operaciones relacionadas con los clientes.
+  version: 1.0.0
+  contact:
+    name: FactuMarket API Support
+servers:
+  - url: http://localhost:4001
+    description: Servidor de desarrollo
+  - url: http://clientes-service:4001
+    description: Servidor Docker interno
+
+tags:
+  - name: clientes
+    description: Operaciones sobre clientes
+  - name: health
+    description: Verificación de estado del servicio
+
+paths:
+  /clientes:
+    post:
+      tags:
+        - clientes
+      summary: Crear un nuevo cliente
+      description: Registra un nuevo cliente en el sistema y envía evento de auditoría
+      operationId: createCliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+                - identificacion
+                - correo
+              properties:
+                nombre:
+                  type: string
+                  description: Nombre completo del cliente
+                  example: Juan Pérez
+                identificacion:
+                  type: string
+                  description: Número de identificación del cliente
+                  example: "1234567890"
+                correo:
+                  type: string
+                  format: email
+                  description: Correo electrónico del cliente
+                  example: juan.perez@example.com
+                direccion:
+                  type: string
+                  description: Dirección física del cliente
+                  example: Calle 123 #45-67
+      responses:
+        '201':
+          description: Cliente creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Cliente creado exitosamente
+                  data:
+                    $ref: '#/components/schemas/Cliente'
+        '400':
+          description: Error de validación en los datos enviados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - clientes
+      summary: Listar todos los clientes
+      description: Obtiene una lista completa de todos los clientes registrados
+      operationId: listClientes
+      responses:
+        '200':
+          description: Lista de clientes obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cliente'
+                  count:
+                    type: integer
+                    description: Número total de clientes
+                    example: 10
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /clientes/{id}:
+    get:
+      tags:
+        - clientes
+      summary: Obtener cliente por ID
+      description: Recupera la información de un cliente específico usando su ID
+      operationId: getCliente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del cliente a consultar
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Cliente'
+        '404':
+          description: Cliente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Verificar estado del servicio
+      description: Endpoint para verificar que el servicio está funcionando correctamente
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Servicio funcionando correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  service:
+                    type: string
+                    example: clientes-service
+                  status:
+                    type: string
+                    example: running
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-01-13T12:00:00Z"
+
+components:
+  schemas:
+    Cliente:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID único del cliente
+          example: 1
+        nombre:
+          type: string
+          description: Nombre completo del cliente
+          example: Juan Pérez
+        identificacion:
+          type: string
+          description: Número de identificación del cliente
+          example: "1234567890"
+        correo:
+          type: string
+          format: email
+          description: Correo electrónico del cliente
+          example: juan.perez@example.com
+        direccion:
+          type: string
+          description: Dirección física del cliente
+          example: Calle 123 #45-67
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación del registro
+          example: "2025-01-13T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Fecha de última actualización del registro
+          example: "2025-01-13T12:00:00Z"
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Mensaje de error
+          example: Cliente no encontrado
