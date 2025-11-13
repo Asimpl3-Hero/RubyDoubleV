@@ -11,5 +11,5 @@ class FacturaModel < ActiveRecord::Base
   validates :monto, presence: true, numericality: { greater_than: 0 }
   validates :estado, presence: true
 
-  serialize :items, JSON
+  serialize :items, coder: JSON
 end

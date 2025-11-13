@@ -8,8 +8,8 @@ RUN apt-get update -qq && \
 # Set working directory
 WORKDIR /app
 
-# Copy Gemfile and install gems
-COPY Gemfile ./
+# Copy Gemfile and Gemfile.lock (if exists) and install gems
+COPY Gemfile Gemfile.lock* ./
 RUN bundle install
 
 # Copy application code

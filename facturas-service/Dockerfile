@@ -2,14 +2,14 @@ FROM ruby:3.2-slim
 
 # Install dependencies
 RUN apt-get update -qq && \
-    apt-get install -y build-essential libsqlite3-dev && \
+    apt-get install -y build-essential libsqlite3-dev libyaml-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy Gemfile and install gems
-COPY Gemfile ./
+# Copy Gemfile and Gemfile.lock (if exists) and install gems
+COPY Gemfile Gemfile.lock* ./
 RUN bundle install
 
 # Copy application code
