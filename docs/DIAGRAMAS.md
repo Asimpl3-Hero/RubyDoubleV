@@ -1,269 +1,324 @@
 # Guía de Diagramas Mermaid - FactuMarket
 
-Este documento explica los diagramas Mermaid utilizados en la documentación del sistema FactuMarket.
+Esta guía explica los diagramas Mermaid utilizados en el proyecto FactuMarket.
 
-## Tipos de Diagramas Utilizados
+## Por Qué Usamos Mermaid
 
-### 1. Graph (Grafos)
+✅ **Versionable** - Los diagramas son código, se versionan con Git
+✅ **Auto-renderizado** - GitHub/GitLab los muestran automáticamente
+✅ **Fácil de editar** - Solo texto, no necesitas herramientas gráficas
+✅ **Consistente** - Mismo estilo en toda la documentación
 
-Usados para mostrar arquitectura y relaciones entre componentes.
+---
 
-**Ejemplo - Arquitectura de Microservicios:**
+## Tipos de Diagramas Usados en el Proyecto
+
+### 1. Graph (Arquitectura y Flujos)
+
+**Uso**: Mostrar arquitectura de microservicios, capas de Clean Architecture, y relaciones entre componentes.
+
+**Ejemplo del proyecto:**
 ```mermaid
 graph TB
-    CS[Clientes Service]
-    FS[Facturas Service]
-    AS[Auditoría Service]
+    subgraph "Microservicios"
+        CS[Clientes Service<br/>:4001]
+        FS[Facturas Service<br/>:4002]
+        AS[Auditoría Service<br/>:4003]
+    end
+
+    subgraph "Bases de Datos"
+        SQL[(SQLite/Oracle)]
+        MONGO[(MongoDB)]
+    end
 
     FS -->|Valida Cliente| CS
     CS -->|Registra Evento| AS
     FS -->|Registra Evento| AS
+    CS --> SQL
+    FS --> SQL
+    AS --> MONGO
 
-    style CS fill:#4CAF50,color:#fff
-    style FS fill:#2196F3,color:#fff
-    style AS fill:#FF9800,color:#fff
+    style CS fill:#51cf66,stroke:#2f9e44,color:#fff
+    style FS fill:#4dabf7,stroke:#1971c2,color:#fff
+    style AS fill:#ffd43b,stroke:#f59f00,color:#000
 ```
 
 **Variantes:**
 - `graph TB` - Top to Bottom (vertical)
 - `graph LR` - Left to Right (horizontal)
-- `graph TD` - Top Down (igual que TB)
 
-### 2. Sequence Diagrams (Diagramas de Secuencia)
+---
 
-Usados para mostrar flujos de comunicación entre componentes a lo largo del tiempo.
+### 2. Sequence Diagram (Flujos de Comunicación)
 
-**Ejemplo - Flujo de Creación de Factura:**
+**Uso**: Mostrar flujos entre microservicios, requests HTTP, y orden de operaciones.
+
+**Ejemplo del proyecto:**
 ```mermaid
 sequenceDiagram
-    autonumber
-    participant Usuario
-    participant Facturas as Facturas Service
-    participant Clientes as Clientes Service
-    participant DB as Database
+    participant Client as Cliente
+    participant FS as Facturas Service
+    participant CS as Clientes Service
+    participant AS as Auditoría Service
 
-    Usuario->>+Facturas: POST /facturas
-    Facturas->>+Clientes: GET /clientes/:id
-    Clientes-->>-Facturas: Cliente válido
-    Facturas->>+DB: INSERT factura
-    DB-->>-Facturas: OK
-    Facturas-->>-Usuario: 201 Created
-
-    style Facturas fill:#2196F3
-    style Clientes fill:#4CAF50
+    Client->>FS: POST /facturas
+    FS->>CS: GET /clientes/:id
+    CS-->>FS: Cliente válido
+    FS->>FS: Crear factura
+    FS->>AS: POST /auditoria
+    AS-->>FS: Evento registrado
+    FS-->>Client: 201 Created
 ```
 
-**Elementos:**
-- `participant` - Define actores/componentes
-- `->>` - Llamada síncrona
-- `-->>` - Respuesta
-- `+` - Activación
-- `-` - Desactivación
-- `autonumber` - Numeración automática
-- `Note` - Notas explicativas
-- `alt` - Flujos alternativos
-- `par` - Operaciones paralelas
+**Elementos clave:**
+- `participant` - Define actores
+- `->>` - Request síncrono
+- `-->>` - Response
+- `Note right of` - Anotaciones
 
-### 3. Subgraphs (Subgrafos)
+---
 
-Usados para agrupar componentes relacionados.
+### 3. Flowchart (Decisiones y Procesos)
 
-**Ejemplo:**
+**Uso**: Mostrar lógica de negocio, validaciones, y flujos de decisión.
+
+**Ejemplo del proyecto:**
 ```mermaid
-graph TB
-    subgraph "Microservicios"
-        CS[Clientes]
-        FS[Facturas]
-    end
+flowchart TD
+    Start([Crear Factura]) --> ValidateData{Datos válidos?}
 
-    subgraph "Bases de Datos"
-        DB1[(Oracle)]
-        DB2[(MongoDB)]
-    end
+    ValidateData -->|No| Error1[422 Error]
+    ValidateData -->|Sí| CheckClient[Validar Cliente]
 
-    CS --> DB1
-    FS --> DB1
-    CS --> DB2
-    FS --> DB2
+    CheckClient -->|No existe| Error2[404 Error]
+    CheckClient -->|Existe| SaveDB[Guardar en DB]
+
+    SaveDB --> Audit[Registrar Auditoría]
+    Audit --> Success[201 Created]
+
+    Error1 --> End([Fin])
+    Error2 --> End
+    Success --> End
+
+    style Start fill:#51cf66,stroke:#2f9e44,color:#fff
+    style Success fill:#51cf66,stroke:#2f9e44,color:#fff
+    style Error1 fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    style Error2 fill:#ff6b6b,stroke:#c92a2a,color:#fff
 ```
 
-## Paleta de Colores Utilizada
+---
+
+### 4. Mindmap (Organización de Conceptos)
+
+**Uso**: Mostrar cobertura de tests, features del sistema, o estructura de módulos.
+
+**Ejemplo del proyecto:**
+```mermaid
+mindmap
+  root((FactuMarket))
+    Microservicios
+      Clientes
+        CRUD
+        Validaciones
+      Facturas
+        Crear
+        Consultar
+        Validar Cliente
+      Auditoría
+        Eventos
+        Consultas
+    Arquitectura
+      Clean Architecture
+      MVC
+      REST APIs
+    Testing
+      Unit Tests
+      Integration Tests
+      WebMock
+```
+
+---
+
+### 5. Pie Chart (Métricas)
+
+**Uso**: Mostrar distribución de tests, cobertura de código, o porcentajes.
+
+**Ejemplo del proyecto:**
+```mermaid
+pie title Test Coverage
+    "Domain Layer" : 95
+    "Integration Tests" : 100
+    "Controllers" : 85
+    "Not Covered" : 5
+```
+
+---
+
+## Paleta de Colores del Proyecto
 
 ### Microservicios
-- **Clientes Service**: `#4CAF50` (Verde) - `fill:#4CAF50,color:#fff`
-- **Facturas Service**: `#2196F3` (Azul) - `fill:#2196F3,color:#fff`
-- **Auditoría Service**: `#FF9800` (Naranja) - `fill:#FF9800,color:#fff`
+```
+Clientes:   fill:#51cf66,stroke:#2f9e44,color:#fff  (Verde)
+Facturas:   fill:#4dabf7,stroke:#1971c2,color:#fff  (Azul)
+Auditoría:  fill:#ffd43b,stroke:#f59f00,color:#000  (Amarillo)
+```
 
-### Capas de Clean Architecture
-- **Presentation Layer**: `#2196F3` (Azul claro) - `fill:#E3F2FD`
-- **Application Layer**: `#FF9800` (Naranja claro) - `fill:#FFF3E0`
-- **Domain Layer**: `#4CAF50` (Verde claro) - `fill:#E8F5E9`
-- **Infrastructure Layer**: `#9C27B0` (Púrpura claro) - `fill:#FCE4EC`
+### Estados
+```
+Success:  fill:#51cf66,stroke:#2f9e44,color:#fff  (Verde)
+Error:    fill:#ff6b6b,stroke:#c92a2a,color:#fff  (Rojo)
+Warning:  fill:#ffd43b,stroke:#f59f00,color:#000  (Amarillo)
+Info:     fill:#4dabf7,stroke:#1971c2,color:#fff  (Azul)
+Neutral:  fill:#ddd,stroke:#999,color:#666        (Gris)
+```
 
 ### Bases de Datos
-- **SQLite/Oracle**: `#607D8B` (Gris azulado)
-- **MongoDB**: `#9C27B0` (Púrpura)
+```
+SQL:      fill:#ffd43b,stroke:#f59f00,color:#000  (Amarillo)
+MongoDB:  fill:#ff6b6b,stroke:#c92a2a,color:#fff  (Rojo claro)
+```
 
-## Convenciones de Nomenclatura
+---
 
-### Formas de Nodos
+## Formas de Nodos
 
 ```mermaid
 graph LR
-    A[Rectángulo: Componente/Servicio]
+    A[Rectángulo: Servicio/Componente]
     B[(Cilindro: Base de Datos)]
-    C((Círculo: Evento))
-    D{Diamante: Decisión}
-    E[/Paralelo: Entrada-Salida/]
+    C{Diamante: Decisión}
+    D([Rectángulo Redondeado: Inicio/Fin])
 ```
 
-### Tipos de Flechas
+---
+
+## Convenciones del Proyecto
+
+### 1. Siempre Usa Colores Consistentes
 
 ```mermaid
 graph LR
-    A -->|Sólida: Dependencia fuerte| B
-    A -.->|Punteada: Dependencia débil| C
-    A ==>|Gruesa: Flujo principal| D
-    A ~~~ E
-```
-
-## Ejemplos por Tipo de Documentación
-
-### README Principal
-
-**Arquitectura General del Sistema:**
-- Graph TB con subgraphs
-- Muestra los 3 microservicios
-- Bases de datos diferenciadas
-- Comunicación entre servicios
-
-**Sequence Diagram:**
-- Flujo completo de una operación
-- Incluye todos los servicios involucrados
-- Muestra comunicación síncrona y asíncrona
-
-### docs/ARQUITECTURA.md
-
-**Clean Architecture:**
-- Graph TD mostrando las 4 capas
-- Flujo de dependencias
-- Representación de interfaces
-
-**Comunicación entre Servicios:**
-- Graph LR simple
-- Focus en relaciones HTTP
-- Indica si es síncrono o asíncrono
-
-**Flujos Detallados:**
-- Sequence Diagrams numerados
-- Notas explicativas
-- Manejo de errores con `alt`
-
-### READMEs de Microservicios
-
-**Arquitectura Interna:**
-- Graph TD con capas específicas del servicio
-- Conexiones a servicios externos
-- Base de datos específica
-
-**Integración:**
-- Graph mostrando conexiones con otros servicios
-- Indicadores de timeout y tipo de comunicación
-
-**Flujos de Operación:**
-- Sequence Diagrams detallados
-- Validaciones y transformaciones
-- Manejo de errores
-
-## Tips para Crear Diagramas
-
-### 1. Consistencia en Estilos
-
-Siempre usar los mismos colores para los mismos componentes:
-
-```mermaid
-graph TB
     CS[Clientes]
     FS[Facturas]
-    AS[Auditoría]
 
-    style CS fill:#4CAF50,color:#fff
-    style FS fill:#2196F3,color:#fff
-    style AS fill:#FF9800,color:#fff
+    style CS fill:#51cf66,stroke:#2f9e44,color:#fff
+    style FS fill:#4dabf7,stroke:#1971c2,color:#fff
 ```
 
-### 2. Claridad en Labels
-
-Usar `<br/>` para dividir texto largo:
+### 2. Usa Labels Claros
 
 ```mermaid
 graph TB
-    A[Clientes Service<br/>Puerto 4001<br/>Clean Architecture]
+    A[Servicio de Clientes<br/>Puerto 4001<br/>SQLite]
 ```
 
-### 3. Notas Explicativas
-
-Agregar contexto con `Note`:
+### 3. Separa con Subgraphs
 
 ```mermaid
-sequenceDiagram
-    A->>B: Request
-    Note over A,B: Comunicación síncrona<br/>Timeout: 5s
-    B-->>A: Response
-```
-
-### 4. Flujos Alternativos
-
-Usar `alt` para mostrar errores:
-
-```mermaid
-sequenceDiagram
-    A->>B: Request
-
-    alt Success
-        B-->>A: 200 OK
-    else Error
-        B-->>A: 500 Error
-        Note right of A: Reintenta
+graph TB
+    subgraph "Frontend"
+        UI[Swagger UI]
     end
+
+    subgraph "Backend"
+        API[REST API]
+    end
+
+    UI --> API
 ```
 
-### 5. Operaciones Paralelas
+---
 
-Usar `par` para mostrar concurrencia:
+## Dónde Se Usan en el Proyecto
+
+| Archivo | Diagramas | Propósito |
+|---------|-----------|-----------|
+| `README.md` | Graph, Sequence | Arquitectura general |
+| `docs/ARQUITECTURA.md` | Graph, Sequence, Flowchart | Clean Architecture detallada |
+| `docs/TESTING.md` | Graph, Sequence, Flowchart, Mindmap, Pie | Estrategia y cobertura de tests |
+
+---
+
+## Cómo Ver los Diagramas
+
+### En GitHub
+Los diagramas se renderizan automáticamente en archivos `.md`
+
+### En VS Code
+Instala la extensión **Markdown Preview Mermaid Support**
+
+### Online
+https://mermaid.live/ - Editor y previsualizador
+
+---
+
+## Plantillas Rápidas
+
+### Arquitectura de Microservicio
+
+```mermaid
+graph TB
+    subgraph "Service Name"
+        CTRL[Controller]
+        UC[Use Cases]
+        ENT[Entities]
+        REPO[Repository]
+    end
+
+    CTRL --> UC
+    UC --> ENT
+    UC --> REPO
+    REPO --> DB[(Database)]
+
+    style CTRL fill:#4dabf7,stroke:#1971c2,color:#fff
+    style UC fill:#ffd43b,stroke:#f59f00,color:#000
+    style ENT fill:#51cf66,stroke:#2f9e44,color:#fff
+```
+
+### Flujo de Request
 
 ```mermaid
 sequenceDiagram
-    par Servicio 1
-        A->>B: Request 1
-    and Servicio 2
-        A->>C: Request 2
-    end
+    participant C as Client
+    participant S as Service
+    participant DB as Database
+
+    C->>S: POST /resource
+    S->>DB: INSERT
+    DB-->>S: OK
+    S-->>C: 201 Created
 ```
 
-## Renderizado
+### Validación con Errores
 
-Los diagramas Mermaid se renderizan automáticamente en:
-- GitHub
-- GitLab
-- Visual Studio Code (con extensión)
-- Muchos editores Markdown
+```mermaid
+flowchart TD
+    Start([Request]) --> Validate{Valid?}
+    Validate -->|Yes| Process[Process]
+    Validate -->|No| Error[Error Response]
+    Process --> Success[Success Response]
 
-Para verlos localmente:
-1. Instalar extensión Mermaid para tu editor
-2. O usar un previsualizador online: https://mermaid.live/
+    style Success fill:#51cf66,stroke:#2f9e44,color:#fff
+    style Error fill:#ff6b6b,stroke:#c92a2a,color:#fff
+```
+
+---
+
+## Tips
+
+1. **Mantén los diagramas simples** - Máximo 10-12 nodos
+2. **Usa colores con propósito** - No solo decoración
+3. **Incluye leyendas** - Si usas símbolos especiales
+4. **Actualízalos** - Cuando cambie la arquitectura
+
+---
 
 ## Referencias
 
-- [Documentación oficial de Mermaid](https://mermaid.js.org/)
+- [Mermaid Docs](https://mermaid.js.org/)
 - [Mermaid Live Editor](https://mermaid.live/)
-- [Mermaid GitHub](https://github.com/mermaid-js/mermaid)
+- [GitHub Mermaid Support](https://github.blog/2022-02-14-include-diagrams-markdown-files-mermaid/)
 
-## Ventajas de Usar Mermaid
+---
 
-✅ **Versionable**: Los diagramas son texto, se pueden versionar con Git
-✅ **Fácil de editar**: No necesitas herramientas gráficas
-✅ **Renderizado automático**: GitHub y GitLab los muestran directamente
-✅ **Consistente**: Mismo estilo en todos los diagramas
-✅ **Mantenible**: Cambios rápidos sin editar imágenes
-✅ **Portable**: Funciona en cualquier plataforma
+**Última actualización:** Enero 2025
