@@ -22,16 +22,16 @@ Sistema de microservicios para facturación electrónica construido con Ruby, ap
 
 ## Características
 
-✅ **Arquitectura de Microservicios** independientes y escalables
-✅ **Clean Architecture** aplicada en servicios de Clientes y Facturas
-✅ **Patrón MVC** en capa de presentación (Controllers, Models, Views)
-✅ **Base de datos Oracle/SQLite** para datos transaccionales
-✅ **MongoDB** para registro de eventos de auditoría
-✅ **API REST** con respuestas JSON
-✅ **Documentación interactiva** con Swagger UI (OpenAPI 3.0)
-✅ **Pruebas unitarias** para lógica de dominio
-✅ **Docker** y **Docker Compose** para deployment
-✅ **Comunicación entre servicios** vía HTTP REST
+✅ **Arquitectura de Microservicios** independientes y escalables <br>
+✅ **Clean Architecture** aplicada en servicios de Clientes y Facturas <br>
+✅ **Patrón MVC** en capa de presentación (Controllers, Models, Views) <br>
+✅ **Base de datos Oracle/SQLite** para datos transaccionales <br>
+✅ **MongoDB** para registro de eventos de auditoría <br>
+✅ **API REST** con respuestas JSON <br>
+✅ **Documentación interactiva** con Swagger UI (OpenAPI 3.0) <br>
+✅ **Pruebas unitarias** para lógica de dominio <br>
+✅ **Docker** y **Docker Compose** para deployment <br>
+✅ **Comunicación entre servicios** vía HTTP REST <br>
 
 ## Arquitectura
 
@@ -181,6 +181,7 @@ http://localhost:4003/api-docs  # Auditoría OpenAPI Spec
 ```
 
 **Características de Swagger UI:**
+
 - Documentación completa de todos los endpoints
 - Ejemplos de request/response
 - Pruebas interactivas (Try it out)
@@ -451,16 +452,6 @@ Y ejecutar el script de inicialización:
 ```bash
 sqlplus factumarket_user/password@localhost:1521/XEPDB1 < db/init_oracle.sql
 ```
-
-## Mejoras Futuras
-
-- [ ] Implementar autenticación JWT
-- [ ] Agregar API Gateway (Kong/Traefik)
-- [ ] Implementar Circuit Breaker (resilience)
-- [ ] Usar Message Queue (RabbitMQ/Kafka) para eventos de auditoría
-- [ ] Agregar Service Discovery (Consul)
-- [ ] Implementar caché con Redis
-- [ ] Integración con DIAN para validación de facturas
 
 ## Contribución
 
