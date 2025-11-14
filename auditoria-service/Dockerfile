@@ -25,6 +25,18 @@ RUN gem install bundler -v '~> 2.4' && \
 # Copy application code
 COPY . .
 
+# Create necessary directories
+RUN mkdir -p /app/public
+
+# If build context is repo root (Dokploy), copy service files explicitly
+RUN if [ -d "/app/auditoria-service" ]; then \
+      cp -r /app/auditoria-service/* /app/ && \
+      rm -rf /app/facturas-service /app/clientes-service /app/auditoria-service; \
+    fi
+
+# Verify openapi.yaml exists
+RUN ls -la /app/public/openapi.yaml || echo "WARNING: openapi.yaml not found!"
+
 # Expose port
 EXPOSE 4003
 
