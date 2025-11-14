@@ -10,6 +10,8 @@ require_relative '../infrastructure/persistence/active_record_factura_repository
 class FacturasController < Sinatra::Base
   configure do
     set :show_exceptions, false
+    set :public_folder, File.join(settings.root, 'public')
+    enable :static
   end
 
   before do
@@ -110,7 +112,16 @@ class FacturasController < Sinatra::Base
   # OpenAPI specification endpoint
   get '/api-docs' do
     content_type 'application/yaml'
-    File.read(File.join(settings.root, '..', '..', 'public', 'openapi.yaml'))
+    openapi_path = File.join(settings.root, 'public', 'openapi.yaml')
+
+    unless File.exist?(openapi_path)
+      halt 404, { error: "OpenAPI spec not found at #{openapi_path}" }.to_json
+    end
+
+    File.read(openapi_path)
+  rescue StandardError => e
+    status 500
+    { error: "Failed to read OpenAPI spec: #{e.message}" }.to_json
   end
 
   # Swagger UI endpoint
