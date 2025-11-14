@@ -143,13 +143,19 @@ class FacturasController < Sinatra::Base
   get '/api-docs' do
     content_type 'application/yaml'
 
-    # Try multiple locations to find openapi.yaml
+    # Try multiple locations to find openapi.yaml (production-safe)
     possible_paths = [
-      '/app/public/openapi.yaml',                           # Docker WORKDIR
-      File.join(settings.root, 'public', 'openapi.yaml'),   # Sinatra root
-      File.join(Dir.pwd, 'public', 'openapi.yaml'),         # Current working directory
-      File.expand_path('../../../public/openapi.yaml', __FILE__)  # Relative to this file
+      '/app/public/openapi.yaml',                                  # Docker WORKDIR (production)
+      File.join(settings.root, 'public', 'openapi.yaml'),          # Sinatra root
+      File.expand_path('../../../public/openapi.yaml', __FILE__)   # Relative to this file
     ]
+
+    # Add Dir.pwd path only if accessible (may fail in production)
+    begin
+      possible_paths << File.join(Dir.pwd, 'public', 'openapi.yaml')
+    rescue Errno::ENOENT, SystemCallError
+      # Ignore if pwd is not accessible
+    end
 
     openapi_path = possible_paths.find { |path| File.exist?(path) }
 
@@ -157,8 +163,7 @@ class FacturasController < Sinatra::Base
       halt 404, {
         error: "OpenAPI spec not found",
         searched_paths: possible_paths,
-        pwd: Dir.pwd,
-        settings_root: settings.root
+        settings_root: settings.root.to_s
       }.to_json
     end
 
