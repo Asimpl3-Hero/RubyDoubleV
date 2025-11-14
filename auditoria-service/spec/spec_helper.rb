@@ -1,3 +1,7 @@
+# Set environment variables before loading application code
+ENV['RACK_ENV'] = 'test'
+ENV['JWT_SECRET_KEY'] = '160b6ba480729089b07d54020388926db99330c793e77fb6530262f973121077'
+
 # SimpleCov must be loaded before application code
 require 'simplecov'
 SimpleCov.start do

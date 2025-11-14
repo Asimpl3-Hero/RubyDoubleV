@@ -1,6 +1,8 @@
 ENV['RACK_ENV'] = 'test'
 ENV['MONGO_URL'] = 'localhost:27017'
 ENV['MONGO_DATABASE'] = 'auditoria_test_db'
+ENV['MONGO_USERNAME'] = 'admin'
+ENV['MONGO_PASSWORD'] = 'factumarket_secure_2025'
 
 require 'bundler/setup'
 Bundler.require(:test)
@@ -27,30 +29,46 @@ RSpec.configure do |config|
   config.before(:suite) do
     begin
       # Clean test database before suite
-      mongo_client = Mongo::Client.new(
-        ['localhost:27017'],
+      options = {
         database: 'auditoria_test_db',
         server_selection_timeout: 2
-      )
+      }
+
+      # Add authentication if credentials are provided
+      if ENV['MONGO_USERNAME'] && ENV['MONGO_PASSWORD']
+        options[:user] = ENV['MONGO_USERNAME']
+        options[:password] = ENV['MONGO_PASSWORD']
+        options[:auth_source] = 'admin'
+      end
+
+      mongo_client = Mongo::Client.new(['localhost:27017'], options)
       mongo_client[:audit_events].drop
       mongo_client.close
-    rescue Mongo::Error::NoServerAvailable => e
-      puts "⚠️  MongoDB not available - skipping database cleanup (tests may use mocks)"
+    rescue Mongo::Error::NoServerAvailable, Mongo::Error::OperationFailure => e
+      puts "⚠️  MongoDB not available or auth failed - skipping database cleanup (tests may use mocks)"
     end
   end
 
   config.after(:each) do
     begin
       # Clean test database after each test
-      mongo_client = Mongo::Client.new(
-        ['localhost:27017'],
+      options = {
         database: 'auditoria_test_db',
         server_selection_timeout: 2
-      )
+      }
+
+      # Add authentication if credentials are provided
+      if ENV['MONGO_USERNAME'] && ENV['MONGO_PASSWORD']
+        options[:user] = ENV['MONGO_USERNAME']
+        options[:password] = ENV['MONGO_PASSWORD']
+        options[:auth_source] = 'admin'
+      end
+
+      mongo_client = Mongo::Client.new(['localhost:27017'], options)
       mongo_client[:audit_events].delete_many
       mongo_client.close
-    rescue Mongo::Error::NoServerAvailable => e
-      # Skip cleanup if MongoDB is not available
+    rescue Mongo::Error::NoServerAvailable, Mongo::Error::OperationFailure => e
+      # Skip cleanup if MongoDB is not available or auth failed
     end
   end
 

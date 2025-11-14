@@ -1,6 +1,7 @@
 ENV['RACK_ENV'] = 'test'
 ENV['CLIENTES_SERVICE_URL'] = 'http://localhost:4001'
 ENV['AUDITORIA_SERVICE_URL'] = 'http://localhost:4003'
+ENV['JWT_SECRET_KEY'] = '160b6ba480729089b07d54020388926db99330c793e77fb6530262f973121077'
 
 require 'bundler/setup'
 Bundler.require(:test)

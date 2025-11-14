@@ -1,4 +1,4 @@
-require_relative '../integration_spec_helper'
+require_relative '../../integration_spec_helper'
 
 RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integration do
   let(:clientes_url) { ENV['CLIENTES_SERVICE_URL'] }

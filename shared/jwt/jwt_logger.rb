@@ -92,16 +92,18 @@ module JwtLogger
         **data
       }.to_json
 
+      # Ensure log directory exists
+      log_dir = File.dirname(LOG_FILE)
+      Dir.mkdir(log_dir) unless Dir.exist?(log_dir)
+
       File.open(LOG_FILE, 'a') do |f|
         f.puts log_line
       end
 
       # No imprimir a stdout para evitar contaminar respuestas HTTP
     rescue => e
-      # Log errors silently to avoid contaminating HTTP responses
-      File.open('/tmp/jwt_logger_errors.log', 'a') do |f|
-        f.puts "[#{Time.now}] Error writing to JWT log: #{e.message}"
-      end
+      # Silently ignore logging errors in test environment to avoid contaminating tests
+      warn "[JWT Logger] Failed to write log: #{e.message}" unless ENV['RACK_ENV'] == 'test'
     end
   end
 end
