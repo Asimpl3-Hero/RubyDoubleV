@@ -6,8 +6,9 @@ info:
     Este microservicio maneja todas las operaciones relacionadas con facturas.
 
     ## Arquitectura
-    - **Base de datos:** SQLite (desarrollo), PostgreSQL (producción)
+    - **Base de datos:** SQLite3
     - **Patrón:** Clean Architecture con Use Cases
+    - **ORM:** ActiveRecord
     - **Integración:** Valida clientes vía HTTP con clientes-service
     - **Auditoría:** Envía eventos automáticos al servicio de auditoría vía HTTP
 
