@@ -1,9 +1,12 @@
-# Controller Layer (MVC) - Handles HTTP requests for audit events
+# Controller Layer (MVC) - Handles HTTP requests and responses
 
 require 'sinatra/base'
 require 'json'
-require_relative '../infrastructure/persistence/mongo_audit_repository'
-require_relative '../models/audit_event'
+require_relative '../application/use_cases/create_audit_event'
+require_relative '../application/use_cases/get_audit_events_by_factura'
+require_relative '../application/use_cases/get_audit_events_by_cliente'
+require_relative '../application/use_cases/list_audit_events'
+require_relative '../infrastructure/persistence/mongo_audit_event_repository'
 
 class AuditoriaController < Sinatra::Base
   configure do
@@ -18,7 +21,11 @@ class AuditoriaController < Sinatra::Base
   post '/auditoria' do
     data = JSON.parse(request.body.read)
 
-    audit_event = AuditEvent.new(
+    use_case = Application::UseCases::CreateAuditEvent.new(
+      audit_event_repository: repository
+    )
+
+    audit_event = use_case.execute(
       entity_type: data['entity_type'],
       entity_id: data['entity_id'],
       action: data['action'],
@@ -27,14 +34,15 @@ class AuditoriaController < Sinatra::Base
       timestamp: data['timestamp']
     )
 
-    saved_event = repository.save(audit_event)
-
     status 201
     {
       success: true,
       message: 'Evento de auditoría registrado',
-      data: saved_event.to_h
+      data: audit_event.to_h
     }.to_json
+  rescue ArgumentError => e
+    status 400
+    { success: false, error: e.message }.to_json
   rescue StandardError => e
     status 500
     { success: false, error: e.message }.to_json
@@ -42,7 +50,11 @@ class AuditoriaController < Sinatra::Base
 
   # GET /auditoria/:factura_id - Get audit events for a specific factura
   get '/auditoria/:factura_id' do
-    events = repository.find_by_factura_id(params[:factura_id].to_i)
+    use_case = Application::UseCases::GetAuditEventsByFactura.new(
+      audit_event_repository: repository
+    )
+
+    events = use_case.execute(factura_id: params[:factura_id].to_i)
 
     status 200
     {
@@ -57,7 +69,11 @@ class AuditoriaController < Sinatra::Base
 
   # GET /auditoria/cliente/:cliente_id - Get audit events for a specific cliente
   get '/auditoria/cliente/:cliente_id' do
-    events = repository.find_by_cliente_id(params[:cliente_id].to_i)
+    use_case = Application::UseCases::GetAuditEventsByCliente.new(
+      audit_event_repository: repository
+    )
+
+    events = use_case.execute(cliente_id: params[:cliente_id].to_i)
 
     status 200
     {
@@ -74,13 +90,15 @@ class AuditoriaController < Sinatra::Base
   get '/auditoria' do
     limit = (params['limit'] || 100).to_i
 
-    events = if params['action']
-               repository.find_by_action(action: params['action'], limit: limit)
-             elsif params['status']
-               repository.find_by_status(status: params['status'], limit: limit)
-             else
-               repository.find_all(limit: limit)
-             end
+    use_case = Application::UseCases::ListAuditEvents.new(
+      audit_event_repository: repository
+    )
+
+    events = use_case.execute(
+      action: params['action'],
+      status: params['status'],
+      limit: limit
+    )
 
     status 200
     {
@@ -153,7 +171,7 @@ class AuditoriaController < Sinatra::Base
   private
 
   def repository
-    @repository ||= Infrastructure::Persistence::MongoAuditRepository.new(mongo_client)
+    @repository ||= Infrastructure::Persistence::MongoAuditEventRepository.new(mongo_client)
   end
 
   def mongo_client

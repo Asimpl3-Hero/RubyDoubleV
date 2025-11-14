@@ -1,19 +1,18 @@
 ENV['RACK_ENV'] = 'test'
-ENV['CLIENTES_SERVICE_URL'] = 'http://localhost:4001'
-ENV['AUDITORIA_SERVICE_URL'] = 'http://localhost:4003'
+ENV['MONGO_URL'] = 'localhost:27017'
+ENV['MONGO_DATABASE'] = 'auditoria_test_db'
 
 require 'bundler/setup'
 Bundler.require(:test)
 
 require_relative '../config/environment'
-require_relative '../app/controllers/facturas_controller'
+require_relative '../app/controllers/auditoria_controller'
 
 require 'rack/test'
 require 'webmock/rspec'
-require 'database_cleaner/active_record'
 
 # Disable external HTTP requests by default
-WebMock.disable_net_connect!(allow_localhost: false)
+WebMock.disable_net_connect!(allow_localhost: true)
 
 RSpec.configure do |config|
   # Include Rack::Test methods
@@ -21,19 +20,22 @@ RSpec.configure do |config|
 
   # Define the app for Rack::Test
   def app
-    FacturasController
+    AuditoriaController
   end
 
-  # Database Cleaner configuration
+  # MongoDB cleanup
   config.before(:suite) do
-    DatabaseCleaner.strategy = :transaction
-    DatabaseCleaner.clean_with(:truncation)
+    # Clean test database before suite
+    mongo_client = Mongo::Client.new(['localhost:27017'], database: 'auditoria_test_db')
+    mongo_client[:audit_events].drop
+    mongo_client.close
   end
 
-  config.around(:each) do |example|
-    DatabaseCleaner.cleaning do
-      example.run
-    end
+  config.after(:each) do
+    # Clean test database after each test
+    mongo_client = Mongo::Client.new(['localhost:27017'], database: 'auditoria_test_db')
+    mongo_client[:audit_events].delete_many
+    mongo_client.close
   end
 
   # RSpec expectations configuration
