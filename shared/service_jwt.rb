@@ -1,5 +1,6 @@
 require 'jwt'
 require 'securerandom'
+require_relative 'jwt_logger'
 
 module ServiceJWT
   SECRET_KEY = ENV['JWT_SECRET_KEY'] || raise("JWT_SECRET_KEY not set")
@@ -14,7 +15,12 @@ module ServiceJWT
       jti: SecureRandom.uuid
     }.merge(additional_claims)
 
-    JWT.encode(payload, SECRET_KEY, ALGORITHM)
+    token = JWT.encode(payload, SECRET_KEY, ALGORITHM)
+
+    # Log token generation
+    JwtLogger.log_token_generation(service_name: service_name)
+
+    token
   end
 
   def self.validate(token)

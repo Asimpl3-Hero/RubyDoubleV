@@ -1,4 +1,5 @@
 require_relative 'service_jwt'
+require_relative 'jwt_logger'
 
 module JwtValidationMiddleware
   class Validator
@@ -22,6 +23,17 @@ module JwtValidationMiddleware
 
       token = auth_header.split(' ').last
       result = ServiceJWT.validate(token)
+
+      service_name = ENV['SERVICE_NAME'] || 'unknown-service'
+
+      # Log validation result
+      JwtLogger.log_token_validation(
+        issuer: result[:issuer] || 'unknown',
+        service: service_name,
+        path: request.path_info,
+        success: result[:valid],
+        error: result[:error]
+      )
 
       if result[:valid]
         env['jwt.issuer'] = result[:issuer]
