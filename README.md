@@ -23,9 +23,10 @@ docker-compose up --build
 ```
 
 **Servicios disponibles:**
-- 🌐 **Clientes**: https://clientes-ruby-double-v.ondeploy.space
-- 📄 **Facturas**: https://factura-ruby-double-v.ondeploy.space
-- 📊 **Auditoría**: https://auditoria-ruby-double-v.ondeploy.space
+
+- 🌐 **Clientes**: https://clientes-ruby-double-v.ondeploy.space/health
+- 📄 **Facturas**: https://factura-ruby-double-v.ondeploy.space/health
+- 📊 **Auditoría**: https://auditoria-ruby-double-v.ondeploy.space/health
 
 ## ✨ Características Principales
 
@@ -38,20 +39,22 @@ docker-compose up --build
 
 ## 📚 Documentación
 
-| Documento | Descripción |
-|-----------|-------------|
+| Documento                                             | Descripción                                       |
+| ----------------------------------------------------- | ------------------------------------------------- |
 | 📖 [**Uso del Sistema**](docs/USO%20DEL%20SISTEMA.md) | Ejemplos de API, endpoints y cómo usar el sistema |
-| 🏗️ [**Arquitectura**](docs/ARQUITECTURA.md) | Patrones, estructura y decisiones de diseño |
-| 🧪 [**Testing**](docs/TESTING.md) | Guía completa de pruebas unitarias e integración |
-| 📊 [**Diagramas**](docs/DIAGRAMAS.md) | Diagramas de arquitectura y flujos |
+| 🏗️ [**Arquitectura**](docs/ARQUITECTURA.md)           | Patrones, estructura y decisiones de diseño       |
+| 🧪 [**Testing**](docs/TESTING.md)                     | Guía completa de pruebas unitarias e integración  |
+| 📊 [**Diagramas**](docs/DIAGRAMAS.md)                 | Diagramas de arquitectura y flujos                |
 
 ## 🛠️ Requisitos
 
 **Con Docker (Recomendado):**
+
 - Docker >= 20.x
 - Docker Compose >= 2.x
 
 **Sin Docker:**
+
 - Ruby >= 3.2
 - SQLite3
 - MongoDB >= 5.0
@@ -86,10 +89,10 @@ curl https://auditoria-ruby-double-v.ondeploy.space/health
 
 Cada servicio incluye documentación interactiva Swagger UI:
 
-| Servicio | Swagger UI | OpenAPI Spec |
-|----------|------------|--------------|
-| **Clientes** | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs) | [/api-docs](https://clientes-ruby-double-v.ondeploy.space/api-docs) |
-| **Facturas** | [/docs](https://factura-ruby-double-v.ondeploy.space/docs) | [/api-docs](https://factura-ruby-double-v.ondeploy.space/api-docs) |
+| Servicio      | Swagger UI                                                   | OpenAPI Spec                                                         |
+| ------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| **Clientes**  | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs)  | [/api-docs](https://clientes-ruby-double-v.ondeploy.space/api-docs)  |
+| **Facturas**  | [/docs](https://factura-ruby-double-v.ondeploy.space/docs)   | [/api-docs](https://factura-ruby-double-v.ondeploy.space/api-docs)   |
 | **Auditoría** | [/docs](https://auditoria-ruby-double-v.ondeploy.space/docs) | [/api-docs](https://auditoria-ruby-double-v.ondeploy.space/api-docs) |
 
 ### 📸 Vistas Previas de Swagger UI
