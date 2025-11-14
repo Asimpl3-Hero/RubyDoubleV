@@ -24,9 +24,9 @@ docker-compose up --build
 
 **Servicios disponibles:**
 
-- 🌐 **Clientes**: https://clientes-ruby-double-v.ondeploy.space/health
-- 📄 **Facturas**: https://factura-ruby-double-v.ondeploy.space/health
-- 📊 **Auditoría**: https://auditoria-ruby-double-v.ondeploy.space/health
+- 🌐 **Clientes**: https://clientes-ruby-double-v.ondeploy.space
+- 📄 **Facturas**: https://factura-ruby-double-v.ondeploy.space
+- 📊 **Auditoría**: https://auditoria-ruby-double-v.ondeploy.space
 
 ## ✨ Características Principales
 
