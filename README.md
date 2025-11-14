@@ -24,36 +24,34 @@ docker-compose up --build
 
 **🌐 Servicios en Producción:**
 
-| Servicio | URL | Swagger Docs |
-|----------|-----|--------------|
-| **Clientes** | https://clientes-ruby-double-v.ondeploy.space | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs) |
-| **Facturas** | https://factura-ruby-double-v.ondeploy.space | [/docs](https://factura-ruby-double-v.ondeploy.space/docs) |
+| Servicio      | URL                                            | Swagger Docs                                                 |
+| ------------- | ---------------------------------------------- | ------------------------------------------------------------ |
+| **Clientes**  | https://clientes-ruby-double-v.ondeploy.space  | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs)  |
+| **Facturas**  | https://factura-ruby-double-v.ondeploy.space   | [/docs](https://factura-ruby-double-v.ondeploy.space/docs)   |
 | **Auditoría** | https://auditoria-ruby-double-v.ondeploy.space | [/docs](https://auditoria-ruby-double-v.ondeploy.space/docs) |
 
 ### 📊 Conexión a MongoDB
 
 **Local (Desarrollo):**
+
 ```
 mongodb://admin:factumarket_secure_2025@localhost:27017/?authSource=admin
 ```
 
-**Producción (Servidor):**
-```
-mongodb://admin:factumarket_secure_2025@165.154.245.7:27017/?authSource=admin
-```
-
-| Parámetro | Valor |
-|-----------|-------|
-| **Usuario** | `admin` |
-| **Password** | `factumarket_secure_2025` |
-| **Base de datos** | `auditoria_db` |
-| **Auth Source** | `admin` |
+| Parámetro         | Valor                     |
+| ----------------- | ------------------------- |
+| **Usuario**       | `admin`                   |
+| **Password**      | `factumarket_secure_2025` |
+| **Base de datos** | `auditoria_db`            |
+| **Auth Source**   | `admin`                   |
 
 **Herramientas recomendadas:**
+
 - [MongoDB Compass](https://www.mongodb.com/products/compass) - GUI oficial
 - [Studio 3T](https://studio3t.com/) - Cliente avanzado
 
 **Colecciones disponibles:**
+
 - `audit_events` - Registros de auditoría del sistema
 
 ## ✨ Características Principales
@@ -74,11 +72,13 @@ mongodb://admin:factumarket_secure_2025@165.154.245.7:27017/?authSource=admin
 ### ¿Por qué SQLite3 en lugar de Oracle?
 
 **Pragmatismo y facilidad de evaluación:**
+
 - ✅ Ejecutar con `docker-compose up` sin configurar Oracle
 - ✅ Sin licencias ni infraestructura adicional
 - ✅ Evaluación inmediata del código y arquitectura
 
 **Equivalencia técnica:**
+
 - Demuestra los mismos principios: Clean Architecture, patrón Repository, ORM (ActiveRecord), transacciones ACID
 - El código está **100% preparado** para migrar a Oracle cambiando solo la configuración
 
@@ -102,12 +102,13 @@ production:
 
 ### Estrategia de Persistencia
 
-| Servicio | Base de Datos | Propósito |
-|----------|---------------|-----------|
-| **Clientes/Facturas** | SQLite3 → Oracle | Transaccional (ACID) |
-| **Auditoría** | MongoDB | Eventos y logs (NoSQL) |
+| Servicio              | Base de Datos    | Propósito              |
+| --------------------- | ---------------- | ---------------------- |
+| **Clientes/Facturas** | SQLite3 → Oracle | Transaccional (ACID)   |
+| **Auditoría**         | MongoDB          | Eventos y logs (NoSQL) |
 
 Esta arquitectura polglota demuestra conocimiento de:
+
 - Bases de datos SQL y NoSQL
 - Patrón CQRS
 - Event Sourcing
@@ -117,20 +118,22 @@ Esta arquitectura polglota demuestra conocimiento de:
 
 ## 📚 Documentación
 
-| Documento | Descripción |
-|-----------|-------------|
+| Documento                                             | Descripción                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------- |
 | 📖 [**Uso del Sistema**](docs/USO%20DEL%20SISTEMA.md) | Instalación detallada, ejemplos de API, flujos completos y casos de error |
-| 🏗️ [**Arquitectura**](docs/ARQUITECTURA.md) | Patrones Clean Architecture, estructura y decisiones de diseño |
-| 🧪 [**Testing**](docs/TESTING.md) | Suite completa de pruebas unitarias, integración y cobertura |
-| 📊 [**Diagramas**](docs/DIAGRAMAS.md) | Diagramas de arquitectura, secuencia y flujos del sistema |
+| 🏗️ [**Arquitectura**](docs/ARQUITECTURA.md)           | Patrones Clean Architecture, estructura y decisiones de diseño            |
+| 🧪 [**Testing**](docs/TESTING.md)                     | Suite completa de pruebas unitarias, integración y cobertura              |
+| 📊 [**Diagramas**](docs/DIAGRAMAS.md)                 | Diagramas de arquitectura, secuencia y flujos del sistema                 |
 
 ## 🛠️ Requisitos
 
 **Con Docker (Recomendado):**
+
 - Docker >= 20.x
 - Docker Compose >= 2.x
 
 **Sin Docker:**
+
 - Ruby >= 3.2
 - SQLite3
 - MongoDB >= 5.0
