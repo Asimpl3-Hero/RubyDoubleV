@@ -20,6 +20,34 @@ class FacturasController < Sinatra::Base
     content_type :json
   end
 
+  # Root endpoint - Service information
+  get '/' do
+    status 200
+    {
+      success: true,
+      service: 'facturas-service',
+      version: '1.0.0',
+      status: 'running',
+      description: 'API REST para la gestión de facturas electrónicas del sistema FactuMarket',
+      timestamp: Time.now.utc.iso8601,
+      endpoints: {
+        health: '/health',
+        docs: '/docs',
+        api_docs: '/api-docs',
+        facturas: {
+          create: 'POST /facturas',
+          get: 'GET /facturas/:id',
+          list: 'GET /facturas',
+          list_by_date: 'GET /facturas?fechaInicio=YYYY-MM-DD&fechaFin=YYYY-MM-DD'
+        }
+      },
+      links: {
+        documentation: '/docs',
+        openapi_spec: '/api-docs'
+      }
+    }.to_json
+  end
+
   # POST /facturas - Create a new factura
   post '/facturas' do
     data = JSON.parse(request.body.read)

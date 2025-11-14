@@ -21,6 +21,36 @@ class AuditoriaController < Sinatra::Base
     content_type :json
   end
 
+  # Root endpoint - Service information
+  get '/' do
+    status 200
+    {
+      success: true,
+      service: 'auditoria-service',
+      version: '1.0.0',
+      status: 'running',
+      description: 'API REST para el registro y consulta de eventos de auditoría del sistema FactuMarket',
+      timestamp: Time.now.utc.iso8601,
+      database: 'MongoDB',
+      endpoints: {
+        health: '/health',
+        docs: '/docs',
+        api_docs: '/api-docs',
+        auditoria: {
+          create: 'POST /auditoria',
+          get_by_factura: 'GET /auditoria/:factura_id',
+          get_by_cliente: 'GET /auditoria/cliente/:cliente_id',
+          list: 'GET /auditoria',
+          list_filtered: 'GET /auditoria?action=CREATE&status=SUCCESS&limit=100'
+        }
+      },
+      links: {
+        documentation: '/docs',
+        openapi_spec: '/api-docs'
+      }
+    }.to_json
+  end
+
   # POST /auditoria - Create a new audit event
   post '/auditoria' do
     data = JSON.parse(request.body.read)

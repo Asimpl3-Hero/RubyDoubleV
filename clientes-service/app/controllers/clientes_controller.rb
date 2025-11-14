@@ -20,6 +20,33 @@ class ClientesController < Sinatra::Base
     content_type :json
   end
 
+  # Root endpoint - Service information
+  get '/' do
+    status 200
+    {
+      success: true,
+      service: 'clientes-service',
+      version: '1.0.0',
+      status: 'running',
+      description: 'API REST para la gestión de clientes del sistema FactuMarket',
+      timestamp: Time.now.utc.iso8601,
+      endpoints: {
+        health: '/health',
+        docs: '/docs',
+        api_docs: '/api-docs',
+        clientes: {
+          create: 'POST /clientes',
+          get: 'GET /clientes/:id',
+          list: 'GET /clientes'
+        }
+      },
+      links: {
+        documentation: '/docs',
+        openapi_spec: '/api-docs'
+      }
+    }.to_json
+  end
+
   # POST /clientes - Create a new cliente
   post '/clientes' do
     data = JSON.parse(request.body.read)
