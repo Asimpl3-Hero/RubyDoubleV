@@ -19,19 +19,19 @@
 ```mermaid
 graph TB
     subgraph "Microservicios"
-        CS[Clientes Service<br/>:4001<br/>Clean Architecture]
-        FS[Facturas Service<br/>:4002<br/>Clean Architecture]
-        AS[Auditoría Service<br/>:4003<br/>Event Store]
+        CS[Clientes Service<br/>:4001]
+        FS[Facturas Service<br/>:4002]
+        AS[Auditoría Service<br/>:4003]
     end
 
     subgraph "Bases de Datos"
-        SQL[(SQLite/Oracle<br/>Transaccional)]
-        MONGO[(MongoDB<br/>Auditoría)]
+        SQL[(SQLite<br/>Transaccional)]
+        MONGO[(MongoDB<br/>Event Store)]
     end
 
-    FS -->|Valida Cliente| CS
-    CS -->|Eventos| AS
-    FS -->|Eventos| AS
+    FS -->|Valida Cliente<br/>Síncrono| CS
+    CS -->|Eventos<br/>Asíncrono| AS
+    FS -->|Eventos<br/>Asíncrono| AS
     CS --> SQL
     FS --> SQL
     AS --> MONGO
@@ -59,31 +59,33 @@ graph TB
 ```
 clientes-service/
 ├── app/
-│   ├── controllers/              # 🎯 Presentation Layer (MVC)
-│   │   └── clientes_controller.rb
-│   ├── domain/                   # 🧠 Domain Layer (Clean Architecture)
-│   │   ├── entities/
-│   │   │   └── cliente.rb        # Lógica de negocio pura
-│   │   └── repositories/
-│   │       └── cliente_repository.rb  # Interfaces
-│   ├── application/              # 📋 Application Layer (Use Cases)
+│   ├── interfaces/               # 🎯 Interfaces Layer
+│   │   └── http/
+│   │       └── clientes_controller.rb
+│   ├── application/              # 📋 Application Layer
 │   │   └── use_cases/
 │   │       ├── create_cliente.rb
 │   │       ├── get_cliente.rb
 │   │       └── list_clientes.rb
-│   ├── infrastructure/           # 🔌 Infrastructure Layer
-│   │   └── persistence/
-│   │       └── active_record_cliente_repository.rb
-│   └── models/                   # 🗄️ Models (MVC + ActiveRecord)
-│       └── cliente_model.rb
+│   ├── domain/                   # 🧠 Domain Layer
+│   │   ├── entities/
+│   │   │   └── cliente.rb        # Lógica de negocio pura
+│   │   └── repositories/
+│   │       └── cliente_repository.rb  # Interfaces
+│   └── infrastructure/           # 🔌 Infrastructure Layer
+│       └── persistence/
+│           ├── active_record_cliente_repository.rb
+│           └── cliente_model.rb  # ActiveRecord model
 ├── config/
 │   ├── environment.rb
-│   └── database.yml
+│   └── database.yml              # SQLite configuration
 ├── public/
 │   └── openapi.yaml             # 📖 OpenAPI 3.0 Spec
 ├── spec/                        # ✅ Tests
 │   ├── domain/                  # Tests unitarios
-│   └── integration/             # Tests de integración
+│   ├── application/             # Tests de casos de uso
+│   ├── infrastructure/          # Tests de persistencia
+│   └── interfaces/              # Tests de controladores HTTP
 ├── Gemfile
 ├── config.ru
 └── Dockerfile
@@ -91,7 +93,7 @@ clientes-service/
 
 **Responsabilidades:**
 - ✅ CRUD de clientes
-- ✅ Validaciones de negocio (email, identificación)
+- ✅ Validaciones de negocio (email, identificación única)
 - ✅ Registro de eventos en auditoría
 
 ---
@@ -101,34 +103,42 @@ clientes-service/
 ```
 facturas-service/
 ├── app/
-│   ├── controllers/              # 🎯 Presentation Layer
-│   │   └── facturas_controller.rb
-│   ├── domain/                   # 🧠 Domain Layer
-│   │   ├── entities/
-│   │   │   └── factura.rb       # Reglas: monto > 0, fecha válida
-│   │   └── repositories/
-│   │       └── factura_repository.rb
+│   ├── interfaces/               # 🎯 Interfaces Layer
+│   │   └── http/
+│   │       └── facturas_controller.rb
 │   ├── application/              # 📋 Application Layer
 │   │   └── use_cases/
 │   │       ├── create_factura.rb    # Valida cliente + crea factura
 │   │       ├── get_factura.rb
 │   │       └── list_facturas.rb
-│   ├── infrastructure/           # 🔌 Infrastructure Layer
-│   │   └── persistence/
-│   │       └── active_record_factura_repository.rb
-│   └── models/
-│       └── factura_model.rb
+│   ├── domain/                   # 🧠 Domain Layer
+│   │   ├── entities/
+│   │   │   └── factura.rb       # Reglas: monto > 0, fecha válida
+│   │   ├── repositories/
+│   │   │   └── factura_repository.rb
+│   │   └── services/            # Domain Services
+│   │       └── cliente_validator.rb
+│   └── infrastructure/           # 🔌 Infrastructure Layer
+│       └── persistence/
+│           ├── active_record_factura_repository.rb
+│           └── factura_model.rb # ActiveRecord model
 ├── config/
+│   ├── environment.rb
+│   └── database.yml              # SQLite configuration
 ├── public/
 │   └── openapi.yaml
 ├── spec/
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── interfaces/
 └── Dockerfile
 ```
 
 **Responsabilidades:**
 - ✅ Creación y gestión de facturas
 - ✅ Validación de clientes (integración con Clientes Service)
-- ✅ Generación de número de factura único
+- ✅ Generación de número de factura único (F-YYYYMMDD-HEXCODE)
 - ✅ Registro de eventos en auditoría
 
 ---
@@ -138,31 +148,39 @@ facturas-service/
 ```
 auditoria-service/
 ├── app/
-│   ├── controllers/              # 🎯 API REST
-│   │   └── auditoria_controller.rb
-│   ├── domain/                   # 🧠 Entidades simples
-│   │   └── entities/
-│   │       └── audit_event.rb
-│   ├── application/              # 📋 Use Cases
+│   ├── interfaces/               # 🎯 Interfaces Layer
+│   │   └── http/
+│   │       └── auditoria_controller.rb
+│   ├── application/              # 📋 Application Layer
 │   │   └── use_cases/
 │   │       ├── create_audit_event.rb
 │   │       ├── get_audit_events_by_factura.rb
 │   │       ├── get_audit_events_by_cliente.rb
 │   │       └── list_audit_events.rb
-│   └── infrastructure/           # 🔌 MongoDB Driver
+│   ├── domain/                   # 🧠 Domain Layer
+│   │   ├── entities/
+│   │   │   └── audit_event.rb
+│   │   └── repositories/
+│   │       └── audit_event_repository.rb
+│   └── infrastructure/           # 🔌 Infrastructure Layer
 │       └── persistence/
 │           └── mongo_audit_event_repository.rb
 ├── config/
 │   └── environment.rb           # MongoDB connection
 ├── public/
 │   └── openapi.yaml
+├── spec/
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── interfaces/
 └── Dockerfile
 ```
 
 **Responsabilidades:**
-- ✅ Registro de todos los eventos del sistema (event store)
-- ✅ Consultas de auditoría por entidad (cliente/factura)
-- ✅ Filtrado por acción y estado
+- ✅ Registro inmutable de eventos del sistema (Event Store)
+- ✅ Consultas de auditoría por cliente/factura
+- ✅ Filtrado por acción, estado y rango de fechas
 - ✅ Almacenamiento en MongoDB (alta velocidad de escritura)
 
 ---
@@ -174,38 +192,43 @@ auditoria-service/
 ```mermaid
 graph TD
     subgraph "Layers - Dependency Flow"
-        PL[🎯 Presentation<br/>Controllers<br/>app/controllers/]
+        IL[🎯 Interfaces<br/>HTTP Controllers<br/>app/interfaces/http/]
         AL[📋 Application<br/>Use Cases<br/>app/application/]
-        DL[🧠 Domain<br/>Entities + Interfaces<br/>app/domain/]
-        IL[🔌 Infrastructure<br/>Repositories<br/>app/infrastructure/]
+        DL[🧠 Domain<br/>Entities + Repositories<br/>app/domain/]
+        INF[🔌 Infrastructure<br/>Persistence + Models<br/>app/infrastructure/]
     end
 
-    Request[HTTP Request] --> PL
-    PL --> AL
+    Request[HTTP Request] --> IL
+    IL --> AL
     AL --> DL
-    DL -.->|implements| IL
-    IL --> DB[(Database)]
-    PL --> Response[JSON Response]
+    DL -.->|implements| INF
+    INF --> DB[(Database)]
+    IL --> Response[JSON Response]
 
-    style PL fill:#4dabf7,stroke:#1971c2,color:#fff
+    style IL fill:#4dabf7,stroke:#1971c2,color:#fff
     style AL fill:#ffd43b,stroke:#f59f00,color:#000
     style DL fill:#51cf66,stroke:#2f9e44,color:#fff
-    style IL fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    style INF fill:#ff6b6b,stroke:#c92a2a,color:#fff
 ```
 
 ### Reglas Clave
 
-| Capa | Responsabilidad | Depende de |
-|------|----------------|------------|
-| **Domain** | Lógica de negocio pura | Nada |
-| **Application** | Casos de uso | Domain |
-| **Infrastructure** | Implementaciones técnicas | Domain (interfaces) |
-| **Presentation** | API REST / HTTP | Application |
+| Capa | Responsabilidad | Depende de | Ubicación |
+|------|----------------|------------|-----------|
+| **Domain** | Lógica de negocio pura | Nada ❌ | `app/domain/` |
+| **Application** | Casos de uso | Domain ✅ | `app/application/` |
+| **Infrastructure** | Implementaciones técnicas (DB, APIs) | Domain ✅ | `app/infrastructure/` |
+| **Interfaces** | Adaptadores HTTP (Controllers) | Application ✅ | `app/interfaces/http/` |
+
+**Principio de Inversión de Dependencias:**
+- Domain define **interfaces** (ej: `FacturaRepository`)
+- Infrastructure **implementa** esas interfaces (ej: `ActiveRecordFacturaRepository`)
+- Los modelos ActiveRecord (`*_model.rb`) están en Infrastructure, NO en Domain
 
 **Beneficios:**
 - ✅ Lógica de negocio independiente de frameworks
 - ✅ Tests unitarios sin dependencias externas
-- ✅ Fácil cambiar bases de datos o frameworks
+- ✅ Fácil cambiar bases de datos (SQLite → Oracle) sin tocar Domain
 
 ---
 
@@ -247,29 +270,15 @@ sequenceDiagram
 
 ---
 
-## 💾 Estrategia de Persistencia
+## 💾 Estrategia de Persistencia (Polyglot Persistence)
 
-### SQLite/Oracle (Transaccional)
+| Base de Datos | Servicios | Propósito | Características |
+|---------------|-----------|-----------|-----------------|
+| **SQLite** | Clientes, Facturas | Datos transaccionales | ✅ ACID<br/>✅ Relaciones<br/>✅ Integridad referencial<br/>🔄 Migrable a Oracle |
+| **MongoDB** | Auditoría | Event Store | ✅ Alta velocidad de escritura<br/>✅ Esquema flexible (JSON)<br/>✅ Consultas por fecha<br/>✅ Inmutabilidad |
 
-**Servicios:** Clientes & Facturas
-
-```
-✅ ACID transactions
-✅ Relaciones entre entidades
-✅ Integridad referencial
-✅ Consultas complejas (JOINs)
-```
-
-### MongoDB (Auditoría)
-
-**Servicio:** Auditoría
-
-```
-✅ Alta velocidad de escritura
-✅ Esquema flexible (JSON)
-✅ Consultas por fecha eficientes
-✅ Sin relaciones complejas
-```
+**Nota sobre Oracle:**
+La arquitectura está diseñada para migrar de SQLite a Oracle cambiando solo la configuración (`database.yml` + adapter), sin modificar código de dominio, casos de uso o repositorios.
 
 ---
 
@@ -278,23 +287,35 @@ sequenceDiagram
 | Componente | Tecnología | Propósito |
 |------------|-----------|-----------|
 | **Lenguaje** | Ruby 3.2+ | Backend |
-| **Framework** | Sinatra | Web minimalista |
-| **Servidor** | Puma | HTTP server |
-| **ORM** | ActiveRecord | Acceso a BD relacional |
-| **DB Relacional** | SQLite/Oracle | Datos transaccionales |
-| **DB NoSQL** | MongoDB | Eventos de auditoría |
-| **HTTP Client** | HTTParty | Comunicación entre servicios |
-| **Testing** | RSpec + WebMock | Pruebas unitarias e integración |
-| **Containers** | Docker + Compose | Despliegue |
-| **API Docs** | OpenAPI 3.0 + Swagger | Documentación interactiva |
+| **Framework** | Sinatra | Web framework minimalista |
+| **Servidor** | Puma | HTTP server con concurrencia |
+| **ORM** | ActiveRecord | Abstracción de BD relacional |
+| **DB Relacional** | SQLite | Transacciones ACID (migrable a Oracle) |
+| **DB NoSQL** | MongoDB | Event Store para auditoría |
+| **HTTP Client** | HTTParty | Comunicación inter-servicios |
+| **Testing** | RSpec + WebMock | Unit & Integration tests |
+| **Containerización** | Docker + Compose | Orquestación de servicios |
+| **API Docs** | OpenAPI 3.0 + Swagger UI | Documentación interactiva |
 
 ---
 
 ## 🔐 Patrones y Principios Aplicados
 
-- ✅ **Clean Architecture** - Separación de responsabilidades
-- ✅ **MVC** - Organización de código en Controllers/Models/Views
-- ✅ **Repository Pattern** - Abstracción de acceso a datos
-- ✅ **Dependency Inversion** - Domain no depende de infraestructura
-- ✅ **Circuit Breaker** - Resiliencia en auditoría
-- ✅ **Event Store** - Auditoría como registro inmutable de eventos
+| Patrón/Principio | Descripción | Implementación |
+|------------------|-------------|----------------|
+| **Clean Architecture** | Separación en 4 capas con dependencias unidireccionales | Domain ← Application ← Infrastructure ← Interfaces |
+| **Repository Pattern** | Abstracción del acceso a datos | `*Repository` (interface) + `ActiveRecord*Repository` (impl) |
+| **Dependency Inversion (SOLID)** | Domain define interfaces, Infrastructure las implementa | Domain no conoce ActiveRecord ni MongoDB |
+| **Use Case Pattern** | Lógica de aplicación aislada en casos de uso | `CreateFactura`, `GetCliente`, `ListAuditEvents` |
+| **Domain Services** | Lógica que no pertenece a una entidad | `ClienteValidator` (valida cliente en servicio externo) |
+| **Event Store** | Registro inmutable de eventos del sistema | Auditoría almacena eventos en MongoDB |
+| **Circuit Breaker** | Resiliencia ante fallos de servicios externos | Auditoría no bloquea si falla (fire-and-forget) |
+| **API First** | Documentación OpenAPI antes de implementación | Swagger UI en `/docs` para cada servicio |
+
+### SOLID en el Proyecto
+
+- **S**ingle Responsibility: Cada clase tiene una responsabilidad única
+- **O**pen/Closed: Extensible sin modificar código existente
+- **L**iskov Substitution: Repositorios son intercambiables
+- **I**nterface Segregation: Interfaces pequeñas y específicas
+- **D**ependency Inversion: Domain define interfaces, Infrastructure implementa

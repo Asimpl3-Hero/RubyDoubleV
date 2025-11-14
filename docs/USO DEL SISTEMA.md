@@ -20,6 +20,7 @@
 ### Opción 1: Docker Compose (Recomendado)
 
 **Requisitos:**
+
 - Docker >= 20.x
 - Docker Compose >= 2.x
 
@@ -52,6 +53,7 @@ graph LR
 ```
 
 Docker Compose orquesta:
+
 - ✅ **4 contenedores**: MongoDB + 3 microservicios
 - ✅ **Red interna**: `factumarket-network` para comunicación
 - ✅ **Volúmenes**: Persistencia de MongoDB
@@ -60,6 +62,7 @@ Docker Compose orquesta:
 ### Opción 2: Desarrollo Local (Sin Docker)
 
 **Requisitos:**
+
 - Ruby >= 3.2
 - MongoDB >= 5.0
 - SQLite3
@@ -89,37 +92,132 @@ bundle exec rake db:migrate
 bundle exec puma config.ru -p 4002
 ```
 
+### 🐳 Comandos Docker Útiles
+
+```bash
+# Iniciar todos los servicios
+docker-compose up
+
+# Iniciar en background (detached)
+docker-compose up -d
+
+# Rebuild forzado de imágenes
+docker-compose up --build
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Logs de un servicio específico
+docker-compose logs -f clientes-service
+
+# Detener servicios
+docker-compose down
+
+# Detener y eliminar volúmenes
+docker-compose down -v
+
+# Ver estado de contenedores
+docker-compose ps
+```
+
+### 📊 Conexión a MongoDB
+
+**Local (Desarrollo):**
+```
+mongodb://admin:factumarket_secure_2025@localhost:27017/?authSource=admin
+```
+
+**Producción (Servidor):**
+```
+mongodb://admin:factumarket_secure_2025@165.154.245.7:27017/?authSource=admin
+```
+
+| Parámetro | Valor |
+|-----------|-------|
+| **Usuario** | `admin` |
+| **Password** | `factumarket_secure_2025` |
+| **Base de datos** | `auditoria_db` |
+| **Auth Source** | `admin` |
+
+**Herramientas recomendadas:**
+- [MongoDB Compass](https://www.mongodb.com/products/compass) - GUI oficial
+- [Studio 3T](https://studio3t.com/) - Cliente avanzado
+
+**Colecciones disponibles:**
+- `audit_events` - Registros de auditoría del sistema
+
 ---
 
 ## 🌐 Acceso a los Servicios
 
 ### Localhost (Desarrollo)
 
-| Servicio | URL Base | Swagger UI | Health Check |
-|----------|----------|------------|--------------|
-| **Clientes** | http://localhost:4001 | [/docs](http://localhost:4001/docs) | [/health](http://localhost:4001/health) |
-| **Facturas** | http://localhost:4002 | [/docs](http://localhost:4002/docs) | [/health](http://localhost:4002/health) |
+| Servicio      | URL Base              | Swagger UI                          | Health Check                            |
+| ------------- | --------------------- | ----------------------------------- | --------------------------------------- |
+| **Clientes**  | http://localhost:4001 | [/docs](http://localhost:4001/docs) | [/health](http://localhost:4001/health) |
+| **Facturas**  | http://localhost:4002 | [/docs](http://localhost:4002/docs) | [/health](http://localhost:4002/health) |
 | **Auditoría** | http://localhost:4003 | [/docs](http://localhost:4003/docs) | [/health](http://localhost:4003/health) |
-| **MongoDB** | localhost:27017 | - | - |
+| **MongoDB**   | localhost:27017       | -                                   | -                                       |
 
 ### Producción (Dokploy)
 
-| Servicio | URL |
-|----------|-----|
-| **Clientes** | https://clientes-ruby-double-v.ondeploy.space |
-| **Facturas** | https://factura-ruby-double-v.ondeploy.space |
-| **Auditoría** | https://auditoria-ruby-double-v.ondeploy.space |
+| Servicio      | URL                                            | Swagger UI                                                   | Health Check                                                    |
+| ------------- | ---------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
+| **Clientes**  | https://clientes-ruby-double-v.ondeploy.space  | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs)  | [/health](https://clientes-ruby-double-v.ondeploy.space/health) |
+| **Facturas**  | https://factura-ruby-double-v.ondeploy.space   | [/docs](https://factura-ruby-double-v.ondeploy.space/docs)   |
+| **Auditoría** | https://auditoria-ruby-double-v.ondeploy.space | [/docs](https://auditoria-ruby-double-v.ondeploy.space/docs) |
 
-### Verificar que todo funciona
+### 🏥 Health Checks
 
+Verificar que los servicios estén corriendo correctamente:
+
+**Desarrollo (localhost):**
 ```bash
-# Health checks
 curl http://localhost:4001/health
 curl http://localhost:4002/health
 curl http://localhost:4003/health
-
-# Esperado: {"success":true,"service":"...-service","status":"running",...}
 ```
+
+**Producción:**
+```bash
+curl https://clientes-ruby-double-v.ondeploy.space/health
+curl https://factura-ruby-double-v.ondeploy.space/health
+curl https://auditoria-ruby-double-v.ondeploy.space/health
+```
+
+**Respuesta esperada:**
+```json
+{
+  "success": true,
+  "service": "clientes-service",
+  "status": "running",
+  "timestamp": "2025-01-13T15:30:00Z"
+}
+```
+
+### 📖 Documentación Swagger
+
+Cada servicio incluye documentación interactiva Swagger UI:
+
+| Servicio | Swagger UI | OpenAPI Spec |
+|----------|-----------|--------------|
+| **Clientes** | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs) | [/api-docs](https://clientes-ruby-double-v.ondeploy.space/api-docs) |
+| **Facturas** | [/docs](https://factura-ruby-double-v.ondeploy.space/docs) | [/api-docs](https://factura-ruby-double-v.ondeploy.space/api-docs) |
+| **Auditoría** | [/docs](https://auditoria-ruby-double-v.ondeploy.space/docs) | [/api-docs](https://auditoria-ruby-double-v.ondeploy.space/api-docs) |
+
+#### 📸 Vistas Previas de Swagger UI
+
+**Servicio de Clientes**
+
+![Swagger UI - Clientes Service](../public/images/SwaggerImageClients.png)
+
+**Servicio de Facturas**
+
+![Swagger UI - Facturas Service](../public/images/SwaggerImageFacture.png)
+
+**Servicio de Auditoría**
+
+![Swagger UI - Auditoría Service](../public/images/SwaggerImageAuditory.png)
 
 ---
 
@@ -155,6 +253,7 @@ curl -X POST http://localhost:4001/clientes \
   }
 }
 ```
+
 </details>
 
 ### Paso 2️⃣: Crear una Factura
@@ -200,6 +299,7 @@ curl -X POST http://localhost:4002/facturas \
   }
 }
 ```
+
 </details>
 
 ### Paso 3️⃣: Consultar Auditoría
@@ -221,41 +321,44 @@ curl http://localhost:4003/auditoria?limit=10
 
 ### 🟢 Clientes Service
 
-| Operación | Método | Endpoint | Descripción |
-|-----------|--------|----------|-------------|
-| Crear | POST | `/clientes` | Crea un nuevo cliente |
-| Obtener | GET | `/clientes/:id` | Consulta un cliente por ID |
-| Listar | GET | `/clientes` | Lista todos los clientes |
+| Operación | Método | Endpoint        | Descripción                |
+| --------- | ------ | --------------- | -------------------------- |
+| Crear     | POST   | `/clientes`     | Crea un nuevo cliente      |
+| Obtener   | GET    | `/clientes/:id` | Consulta un cliente por ID |
+| Listar    | GET    | `/clientes`     | Lista todos los clientes   |
 
 **Ejemplo: Listar clientes**
+
 ```bash
 curl http://localhost:4001/clientes
 ```
 
 ### 🔵 Facturas Service
 
-| Operación | Método | Endpoint | Descripción |
-|-----------|--------|----------|-------------|
-| Crear | POST | `/facturas` | Crea una nueva factura |
-| Obtener | GET | `/facturas/:id` | Consulta una factura por ID |
-| Listar | GET | `/facturas` | Lista todas las facturas |
-| Filtrar | GET | `/facturas?fechaInicio=...&fechaFin=...` | Filtra por rango de fechas |
+| Operación | Método | Endpoint                                 | Descripción                 |
+| --------- | ------ | ---------------------------------------- | --------------------------- |
+| Crear     | POST   | `/facturas`                              | Crea una nueva factura      |
+| Obtener   | GET    | `/facturas/:id`                          | Consulta una factura por ID |
+| Listar    | GET    | `/facturas`                              | Lista todas las facturas    |
+| Filtrar   | GET    | `/facturas?fechaInicio=...&fechaFin=...` | Filtra por rango de fechas  |
 
 **Ejemplo: Filtrar facturas por fecha**
+
 ```bash
 curl "http://localhost:4002/facturas?fechaInicio=2025-01-01&fechaFin=2025-01-31"
 ```
 
 ### 🟡 Auditoría Service
 
-| Operación | Método | Endpoint | Descripción |
-|-----------|--------|----------|-------------|
-| Por Factura | GET | `/auditoria/:factura_id` | Eventos de una factura |
-| Por Cliente | GET | `/auditoria/cliente/:cliente_id` | Eventos de un cliente |
-| Todos | GET | `/auditoria` | Todos los eventos (paginado) |
-| Filtrar | GET | `/auditoria?action=CREATE&status=SUCCESS` | Filtra por acción/estado |
+| Operación   | Método | Endpoint                                  | Descripción                  |
+| ----------- | ------ | ----------------------------------------- | ---------------------------- |
+| Por Factura | GET    | `/auditoria/:factura_id`                  | Eventos de una factura       |
+| Por Cliente | GET    | `/auditoria/cliente/:cliente_id`          | Eventos de un cliente        |
+| Todos       | GET    | `/auditoria`                              | Todos los eventos (paginado) |
+| Filtrar     | GET    | `/auditoria?action=CREATE&status=SUCCESS` | Filtra por acción/estado     |
 
 **Ejemplo: Solo errores**
+
 ```bash
 curl "http://localhost:4003/auditoria?status=ERROR&limit=20"
 ```
@@ -264,14 +367,15 @@ curl "http://localhost:4003/auditoria?status=ERROR&limit=20"
 
 ## ⚠️ Casos de Error Comunes
 
-| Escenario | HTTP Status | Error | Solución |
-|-----------|-------------|-------|----------|
-| Cliente inexistente | 422 | `Cliente con ID X no existe` | Verificar ID del cliente antes de crear factura |
-| Monto negativo | 400 | `Monto debe ser mayor a 0` | Validar monto > 0 |
-| Cliente duplicado | 400 | `Cliente con identificación X ya existe` | Usar identificación única |
-| Servicio no disponible | 503 | `timeout/connection unavailable` | Verificar que todos los servicios estén corriendo |
+| Escenario              | HTTP Status | Error                                    | Solución                                          |
+| ---------------------- | ----------- | ---------------------------------------- | ------------------------------------------------- |
+| Cliente inexistente    | 422         | `Cliente con ID X no existe`             | Verificar ID del cliente antes de crear factura   |
+| Monto negativo         | 400         | `Monto debe ser mayor a 0`               | Validar monto > 0                                 |
+| Cliente duplicado      | 400         | `Cliente con identificación X ya existe` | Usar identificación única                         |
+| Servicio no disponible | 503         | `timeout/connection unavailable`         | Verificar que todos los servicios estén corriendo |
 
 **Ejemplo de error:**
+
 ```bash
 curl -X POST http://localhost:4002/facturas -H "Content-Type: application/json" \
   -d '{"cliente_id": 999, "fecha_emision": "2025-01-13", "monto": 1000000}'
@@ -284,35 +388,101 @@ curl -X POST http://localhost:4002/facturas -H "Content-Type: application/json" 
 
 ## 🧪 Testing Automatizado
 
-**Opción 1: Script de prueba rápida**
+### Opción 1: Script de Prueba Rápida
 
 Crear archivo `test_api.sh`:
+
 ```bash
 #!/bin/bash
-# Health checks
-curl http://localhost:4001/health
-curl http://localhost:4002/health
-curl http://localhost:4003/health
+echo "=== FactuMarket API Test ==="
 
-# Crear cliente y factura
+# Health checks
+echo "\n1. Health Checks..."
+curl -s http://localhost:4001/health | jq
+curl -s http://localhost:4002/health | jq
+curl -s http://localhost:4003/health | jq
+
+# Crear cliente
+echo "\n2. Creando cliente..."
 CLIENTE=$(curl -s -X POST http://localhost:4001/clientes \
   -H "Content-Type: application/json" \
   -d '{"nombre":"Test S.A.","identificacion":"900999888","correo":"test@example.com","direccion":"Calle 1"}')
 
+echo $CLIENTE | jq
 CLIENTE_ID=$(echo $CLIENTE | jq -r '.data.id')
 
-curl -X POST http://localhost:4002/facturas \
+# Crear factura
+echo "\n3. Creando factura para cliente $CLIENTE_ID..."
+curl -s -X POST http://localhost:4002/facturas \
   -H "Content-Type: application/json" \
-  -d "{\"cliente_id\":$CLIENTE_ID,\"fecha_emision\":\"2025-01-13\",\"monto\":1000000}"
+  -d "{\"cliente_id\":$CLIENTE_ID,\"fecha_emision\":\"2025-01-13\",\"monto\":1000000}" | jq
+
+# Consultar auditoría
+echo "\n4. Consultando eventos de auditoría..."
+curl -s "http://localhost:4003/auditoria?limit=5" | jq
 ```
 
-**Opción 2: Tests con RSpec**
+Ejecutar:
+```bash
+chmod +x test_api.sh
+./test_api.sh
+```
 
-Ver [TESTING.md](TESTING.md) para la suite completa de pruebas unitarias e integración.
+### Opción 2: Tests con RSpec
 
-**Opción 3: Colección Postman**
+**Ejecutar tests por servicio:**
 
-Importar colección desde: `postman/FactuMarket.postman_collection.json` (o crear una nueva con los endpoints documentados arriba)
+```bash
+# Clientes Service
+cd clientes-service
+bundle exec rspec
+
+# Facturas Service
+cd facturas-service
+bundle exec rspec
+
+# Auditoría Service
+cd auditoria-service
+bundle exec rspec
+```
+
+**Tests específicos:**
+
+```bash
+# Solo tests de dominio
+bundle exec rspec spec/domain/
+
+# Solo tests de casos de uso
+bundle exec rspec spec/application/
+
+# Solo tests de integración
+bundle exec rspec spec/interfaces/
+
+# Test específico con línea
+bundle exec rspec spec/domain/entities/cliente_spec.rb:15
+```
+
+**Con formato detallado:**
+```bash
+bundle exec rspec --format documentation
+```
+
+Ver [TESTING.md](TESTING.md) para la suite completa de pruebas y cobertura.
+
+### Opción 3: Colección Postman
+
+1. Descargar [Postman](https://www.postman.com/downloads/)
+2. Importar colección desde: `postman/FactuMarket.postman_collection.json` (si existe)
+3. O crear nueva colección con los endpoints documentados en este archivo
+
+### Opción 4: Swagger UI Interactivo
+
+La forma más fácil de probar la API es usando Swagger UI:
+
+1. Abrir http://localhost:4001/docs (Clientes)
+2. Abrir http://localhost:4002/docs (Facturas)
+3. Abrir http://localhost:4003/docs (Auditoría)
+4. Usar el botón "Try it out" en cada endpoint
 
 ---
 

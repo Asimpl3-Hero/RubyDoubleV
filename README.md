@@ -22,11 +22,39 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-**Servicios disponibles:**
+**🌐 Servicios en Producción:**
 
-- 🌐 **Clientes**: https://clientes-ruby-double-v.ondeploy.space
-- 📄 **Facturas**: https://factura-ruby-double-v.ondeploy.space
-- 📊 **Auditoría**: https://auditoria-ruby-double-v.ondeploy.space
+| Servicio | URL | Swagger Docs |
+|----------|-----|--------------|
+| **Clientes** | https://clientes-ruby-double-v.ondeploy.space | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs) |
+| **Facturas** | https://factura-ruby-double-v.ondeploy.space | [/docs](https://factura-ruby-double-v.ondeploy.space/docs) |
+| **Auditoría** | https://auditoria-ruby-double-v.ondeploy.space | [/docs](https://auditoria-ruby-double-v.ondeploy.space/docs) |
+
+### 📊 Conexión a MongoDB
+
+**Local (Desarrollo):**
+```
+mongodb://admin:factumarket_secure_2025@localhost:27017/?authSource=admin
+```
+
+**Producción (Servidor):**
+```
+mongodb://admin:factumarket_secure_2025@165.154.245.7:27017/?authSource=admin
+```
+
+| Parámetro | Valor |
+|-----------|-------|
+| **Usuario** | `admin` |
+| **Password** | `factumarket_secure_2025` |
+| **Base de datos** | `auditoria_db` |
+| **Auth Source** | `admin` |
+
+**Herramientas recomendadas:**
+- [MongoDB Compass](https://www.mongodb.com/products/compass) - GUI oficial
+- [Studio 3T](https://studio3t.com/) - Cliente avanzado
+
+**Colecciones disponibles:**
+- `audit_events` - Registros de auditoría del sistema
 
 ## ✨ Características Principales
 
@@ -89,90 +117,25 @@ Esta arquitectura polglota demuestra conocimiento de:
 
 ## 📚 Documentación
 
-| Documento                                             | Descripción                                       |
-| ----------------------------------------------------- | ------------------------------------------------- |
-| 📖 [**Uso del Sistema**](docs/USO%20DEL%20SISTEMA.md) | Ejemplos de API, endpoints y cómo usar el sistema |
-| 🏗️ [**Arquitectura**](docs/ARQUITECTURA.md)           | Patrones, estructura y decisiones de diseño       |
-| 🧪 [**Testing**](docs/TESTING.md)                     | Guía completa de pruebas unitarias e integración  |
-| 📊 [**Diagramas**](docs/DIAGRAMAS.md)                 | Diagramas de arquitectura y flujos                |
+| Documento | Descripción |
+|-----------|-------------|
+| 📖 [**Uso del Sistema**](docs/USO%20DEL%20SISTEMA.md) | Instalación detallada, ejemplos de API, flujos completos y casos de error |
+| 🏗️ [**Arquitectura**](docs/ARQUITECTURA.md) | Patrones Clean Architecture, estructura y decisiones de diseño |
+| 🧪 [**Testing**](docs/TESTING.md) | Suite completa de pruebas unitarias, integración y cobertura |
+| 📊 [**Diagramas**](docs/DIAGRAMAS.md) | Diagramas de arquitectura, secuencia y flujos del sistema |
 
 ## 🛠️ Requisitos
 
 **Con Docker (Recomendado):**
-
 - Docker >= 20.x
 - Docker Compose >= 2.x
 
 **Sin Docker:**
-
 - Ruby >= 3.2
 - SQLite3
 - MongoDB >= 5.0
 
-## 🐳 Docker Commands
-
-```bash
-# Iniciar servicios
-docker-compose up
-
-# Iniciar en background
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Detener servicios
-docker-compose down
-```
-
-## 📋 Health Checks
-
-Verificar que los servicios estén corriendo:
-
-```bash
-curl https://clientes-ruby-double-v.ondeploy.space/health
-curl https://factura-ruby-double-v.ondeploy.space/health
-curl https://auditoria-ruby-double-v.ondeploy.space/health
-```
-
-## 📖 Documentación Swagger
-
-Cada servicio incluye documentación interactiva Swagger UI:
-
-| Servicio      | Swagger UI                                                   | OpenAPI Spec                                                         |
-| ------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
-| **Clientes**  | [/docs](https://clientes-ruby-double-v.ondeploy.space/docs)  | [/api-docs](https://clientes-ruby-double-v.ondeploy.space/api-docs)  |
-| **Facturas**  | [/docs](https://factura-ruby-double-v.ondeploy.space/docs)   | [/api-docs](https://factura-ruby-double-v.ondeploy.space/api-docs)   |
-| **Auditoría** | [/docs](https://auditoria-ruby-double-v.ondeploy.space/docs) | [/api-docs](https://auditoria-ruby-double-v.ondeploy.space/api-docs) |
-
-### 📸 Vistas Previas de Swagger UI
-
-**Servicio de Clientes**
-
-![Swagger UI - Clientes Service](public/images/SwaggerImageClients.png)
-
-**Servicio de Facturas**
-
-![Swagger UI - Facturas Service](public/images/SwaggerImageFacture.png)
-
-**Servicio de Auditoría**
-
-![Swagger UI - Auditoría Service](public/images/SwaggerImageAuditory.png)
-
-## 🧪 Testing
-
-```bash
-# Pruebas unitarias
-cd clientes-service && bundle exec rspec spec/domain/
-
-# Pruebas de integración
-cd facturas-service && bundle exec rspec spec/integration/
-
-# Ejecutar todos los tests
-./scripts/test.sh
-```
-
-Ver [documentación completa de testing](docs/TESTING.md) para más detalles.
+> 💡 Para instrucciones detalladas de instalación, ver [Uso del Sistema](docs/USO%20DEL%20SISTEMA.md)
 
 ## 🛠️ Stack Tecnológico
 
@@ -188,4 +151,4 @@ Desarrollado por **Justin Hernandez Tobinson** como prueba técnica para Double 
 
 ---
 
-**📌 Nota**: Este README proporciona una vista rápida del proyecto. Para información detallada, consulta la [documentación completa](docs/).
+> 📌 **Nota**: Este README es una vista general del proyecto. Para guías detalladas de instalación, uso y ejemplos de API, consulta la [documentación completa](docs/).
