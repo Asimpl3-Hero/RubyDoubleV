@@ -237,9 +237,13 @@ class AuditoriaController < Sinatra::Base
   end
 
   def mongo_client
+    timeout = ENV['RACK_ENV'] == 'test' ? 1 : 30
     @mongo_client ||= Mongo::Client.new(
       [mongo_url],
-      database: mongo_database
+      database: mongo_database,
+      server_selection_timeout: timeout,
+      connect_timeout: timeout,
+      socket_timeout: timeout
     )
   end
 

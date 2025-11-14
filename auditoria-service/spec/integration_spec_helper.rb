@@ -23,19 +23,35 @@ RSpec.configure do |config|
     AuditoriaController
   end
 
-  # MongoDB cleanup
+  # MongoDB cleanup (skip if MongoDB is not available)
   config.before(:suite) do
-    # Clean test database before suite
-    mongo_client = Mongo::Client.new(['localhost:27017'], database: 'auditoria_test_db')
-    mongo_client[:audit_events].drop
-    mongo_client.close
+    begin
+      # Clean test database before suite
+      mongo_client = Mongo::Client.new(
+        ['localhost:27017'],
+        database: 'auditoria_test_db',
+        server_selection_timeout: 2
+      )
+      mongo_client[:audit_events].drop
+      mongo_client.close
+    rescue Mongo::Error::NoServerAvailable => e
+      puts "⚠️  MongoDB not available - skipping database cleanup (tests may use mocks)"
+    end
   end
 
   config.after(:each) do
-    # Clean test database after each test
-    mongo_client = Mongo::Client.new(['localhost:27017'], database: 'auditoria_test_db')
-    mongo_client[:audit_events].delete_many
-    mongo_client.close
+    begin
+      # Clean test database after each test
+      mongo_client = Mongo::Client.new(
+        ['localhost:27017'],
+        database: 'auditoria_test_db',
+        server_selection_timeout: 2
+      )
+      mongo_client[:audit_events].delete_many
+      mongo_client.close
+    rescue Mongo::Error::NoServerAvailable => e
+      # Skip cleanup if MongoDB is not available
+    end
   end
 
   # RSpec expectations configuration

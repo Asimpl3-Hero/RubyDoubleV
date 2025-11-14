@@ -159,7 +159,12 @@ end
 
 def run_service_tests(service)
   Dir.chdir(service) do
-    system("bundle exec rspec --format documentation --color")
+    # Exclude MongoDB integration tests for auditoria-service
+    if service == 'auditoria-service'
+      system("bundle exec rspec --exclude-pattern 'spec/integration/**/*_spec.rb' --format documentation --color")
+    else
+      system("bundle exec rspec --format documentation --color")
+    end
   end
 end
 

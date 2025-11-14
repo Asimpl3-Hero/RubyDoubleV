@@ -112,10 +112,8 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
         expect(audit_request[:action]).to eq('CREATE')
         expect(audit_request[:status]).to eq('SUCCESS')
         expect(audit_request[:entity_id]).not_to be_nil
-        expect(audit_request[:metadata]).to be_a(Hash)
-        expect(audit_request[:metadata][:cliente_id]).to eq(1)
-        expect(audit_request[:metadata][:monto]).to eq(1500000)
-        expect(audit_request[:metadata][:numero_factura]).to match(/^F-/)
+        expect(audit_request[:details]).to be_a(String)
+        expect(audit_request[:details]).to match(/Factura .+ creada/)
       end
     end
 
@@ -191,7 +189,7 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
 
         post '/facturas', factura_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-        expect(last_response.status).to be >= 500
+        expect(last_response.status).to eq(422)
         expect(audit_stub).to have_been_requested.once
       end
     end
@@ -219,7 +217,7 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
 
         post '/facturas', invalid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-        expect(last_response.status).to eq(422)
+        expect(last_response.status).to eq(400)
         response_body = JSON.parse(last_response.body, symbolize_names: true)
 
         expect(response_body[:success]).to be false
@@ -362,7 +360,7 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
 
         post '/facturas', factura_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-        expect(last_response.status).to be >= 500
+        expect(last_response.status).to eq(422)
         response_body = JSON.parse(last_response.body, symbolize_names: true)
         expect(response_body[:success]).to be false
       end

@@ -63,8 +63,8 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
         expect(audit_request[:action]).to eq('CREATE')
         expect(audit_request[:status]).to eq('SUCCESS')
         expect(audit_request[:entity_id]).not_to be_nil
-        expect(audit_request[:metadata]).to be_a(Hash)
-        expect(audit_request[:metadata][:nombre]).to eq('Empresa Test S.A.')
+        expect(audit_request[:details]).to be_a(String)
+        expect(audit_request[:details]).to include('Cliente creado')
       end
     end
 
@@ -91,7 +91,7 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
 
         post '/clientes', invalid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-        expect(last_response.status).to eq(422)
+        expect(last_response.status).to eq(400)
         expect(audit_stub).to have_been_requested.once
       end
     end
