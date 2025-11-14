@@ -104,11 +104,23 @@ class ClientesController < Sinatra::Base
   get '/api-docs' do
     content_type 'application/yaml'
 
-    # Use settings.root which was configured in the configure block
-    openapi_path = File.join(settings.root, 'public', 'openapi.yaml')
+    # Try multiple locations to find openapi.yaml
+    possible_paths = [
+      '/app/public/openapi.yaml',                           # Docker WORKDIR
+      File.join(settings.root, 'public', 'openapi.yaml'),   # Sinatra root
+      File.join(Dir.pwd, 'public', 'openapi.yaml'),         # Current working directory
+      File.expand_path('../../../public/openapi.yaml', __FILE__)  # Relative to this file
+    ]
 
-    unless File.exist?(openapi_path)
-      halt 404, { error: "OpenAPI spec not found at #{openapi_path}" }.to_json
+    openapi_path = possible_paths.find { |path| File.exist?(path) }
+
+    unless openapi_path
+      halt 404, {
+        error: "OpenAPI spec not found",
+        searched_paths: possible_paths,
+        pwd: Dir.pwd,
+        settings_root: settings.root
+      }.to_json
     end
 
     File.read(openapi_path)
