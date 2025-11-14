@@ -8,8 +8,10 @@ info:
   contact:
     name: FactuMarket API Support
 servers:
+  - url: https://factura-ruby-double-v.ondeploy.space
+    description: Servidor de producción
   - url: http://localhost:4002
-    description: Servidor de desarrollo
+    description: Servidor de desarrollo local
   - url: http://facturas-service:4002
     description: Servidor Docker interno
 
