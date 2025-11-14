@@ -1,7 +1,34 @@
+# Git
 .git
 .gitignore
+
+# Documentation
 *.md
-.env
+README*
+
+# Environment files (will be provided at runtime)
+.env.example
+
+# Logs
 log/
+logs/
+*.log
+
+# Temporary files
 tmp/
+*.tmp
+*.swp
+*.swo
+
+# Test files (excluded from production builds)
 spec/
+test/
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

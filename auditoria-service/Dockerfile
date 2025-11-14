@@ -1,16 +1,27 @@
 FROM ruby:3.2-slim
 
-# Install dependencies
+# Install system dependencies required for building gems
 RUN apt-get update -qq && \
-    apt-get install -y build-essential && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    libyaml-dev \
+    git \
+    curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy Gemfile and Gemfile.lock (if exists) and install gems
+# Copy Gemfile and Gemfile.lock
 COPY Gemfile Gemfile.lock* ./
-RUN bundle install
+
+# Install bundler and gems
+RUN gem install bundler -v '~> 2.4' && \
+    bundle config set --local deployment 'false' && \
+    bundle config set --local without 'test' && \
+    bundle install --jobs 4 --retry 3
 
 # Copy application code
 COPY . .
