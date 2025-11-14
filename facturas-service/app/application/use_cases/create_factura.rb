@@ -15,15 +15,11 @@ module Application
       end
 
       def execute(cliente_id:, fecha_emision:, monto:, items: [])
-        # Validate cliente exists
-        unless @cliente_validator.cliente_exists?(cliente_id)
-          raise StandardError, "Cliente con ID #{cliente_id} no existe o no está disponible"
-        end
-
         # Parse date if it's a string
         fecha_emision_parsed = fecha_emision.is_a?(String) ? Date.parse(fecha_emision) : fecha_emision
 
-        # Create domain entity
+        # Create domain entity first - this validates business rules
+        # This is more efficient than calling external service first
         factura = Domain::Entities::Factura.new(
           cliente_id: cliente_id,
           fecha_emision: fecha_emision_parsed,
@@ -31,12 +27,17 @@ module Application
           items: items
         )
 
+        # Validate cliente exists (only after business rules are valid)
+        unless @cliente_validator.cliente_exists?(cliente_id)
+          raise StandardError, "Cliente con ID #{cliente_id} no existe o no está disponible"
+        end
+
         # Persist using repository
         saved_factura = @factura_repository.save(factura)
 
         # Register audit event
         register_audit_event(
-          entity_type: 'Factura',
+          entity_type: 'factura',
           entity_id: saved_factura.id,
           action: 'CREATE',
           details: "Factura #{saved_factura.numero_factura} creada para cliente #{cliente_id}. Monto: #{monto}",
@@ -47,7 +48,7 @@ module Application
       rescue StandardError => e
         # Register audit event for failure
         register_audit_event(
-          entity_type: 'Factura',
+          entity_type: 'factura',
           entity_id: nil,
           action: 'CREATE',
           details: "Error al crear factura: #{e.message}",

@@ -18,6 +18,10 @@ Bundler.require(:test)
 
 require 'date'
 require_relative '../app/domain/entities/factura'
+require 'webmock/rspec'
+
+# Allow HTTP connections for unit tests
+WebMock.allow_net_connect!
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
@@ -29,4 +33,12 @@ RSpec.configure do |config|
   end
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
+
+  # Stub external service calls for unit tests
+  config.before(:each) do
+    stub_request(:post, /localhost:4003\/auditoria/)
+      .to_return(status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' })
+    stub_request(:get, /localhost:4001\/clientes/)
+      .to_return(status: 200, body: '{"id":1,"nombre":"Test Cliente"}', headers: { 'Content-Type' => 'application/json' })
+  end
 end

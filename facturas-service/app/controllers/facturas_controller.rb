@@ -43,8 +43,15 @@ class FacturasController < Sinatra::Base
     status 400
     { success: false, error: e.message }.to_json
   rescue StandardError => e
-    status 500
-    { success: false, error: e.message }.to_json
+    # Check if it's an infrastructure error (timeout, connection issues, etc.)
+    if e.message.match?(/timeout|connection|unavailable|timed out|execution expired/i)
+      status 503
+      { success: false, error: e.message }.to_json
+    else
+      # Business logic errors (like "Cliente no existe") return 422
+      status 422
+      { success: false, error: e.message }.to_json
+    end
   end
 
   # GET /facturas/:id - Get factura by ID

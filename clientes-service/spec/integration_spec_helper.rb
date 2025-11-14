@@ -25,6 +25,10 @@ RSpec.configure do |config|
 
   # Database Cleaner configuration
   config.before(:suite) do
+    # Load database schema for test database
+    ActiveRecord::Schema.verbose = false
+    load File.join(__dir__, '../db/schema.rb')
+
     DatabaseCleaner.strategy = :transaction
     DatabaseCleaner.clean_with(:truncation)
   end
@@ -46,7 +50,4 @@ RSpec.configure do |config|
   end
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
-
-  # Filter lines from Rails gems in backtraces
-  config.filter_rails_from_backtrace!
 end

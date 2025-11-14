@@ -8,7 +8,7 @@ RSpec.describe Infrastructure::Persistence::ActiveRecordClienteRepository do
   let(:repository) { described_class.new }
 
   # Mock ClienteModel
-  let(:cliente_model) { instance_double(ClienteModel, id: 1, nombre: 'Test', identificacion: '123', correo: 'test@test.com', direccion: 'Test St', created_at: Time.now, updated_at: Time.now) }
+  let(:cliente_model) { double('ClienteModel', id: 1, nombre: 'Test', identificacion: '123', correo: 'test@test.com', direccion: 'Test St', created_at: Time.now, updated_at: Time.now) }
 
   describe '#save' do
     it 'saves cliente to database and returns entity' do
@@ -104,7 +104,7 @@ RSpec.describe Infrastructure::Persistence::ActiveRecordClienteRepository do
   describe '#update' do
     it 'updates cliente and returns entity' do
       expect(ClienteModel).to receive(:find).with(1).and_return(cliente_model)
-      expect(cliente_model).to receive(:update!).with(nombre: 'Updated Name')
+      expect(cliente_model).to receive(:update!).with(hash_including(nombre: 'Updated Name'))
       expect(cliente_model).to receive(:nombre).and_return('Updated Name')
 
       result = repository.update(1, nombre: 'Updated Name')

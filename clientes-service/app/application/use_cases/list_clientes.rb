@@ -15,7 +15,7 @@ module Application
 
         # Register audit event
         register_audit_event(
-          entity_type: 'Cliente',
+          entity_type: 'cliente',
           entity_id: nil,
           action: 'LIST',
           details: "Listado de clientes: #{clientes.count} registros",
@@ -26,7 +26,7 @@ module Application
       rescue StandardError => e
         # Register audit event for failure
         register_audit_event(
-          entity_type: 'Cliente',
+          entity_type: 'cliente',
           entity_id: nil,
           action: 'LIST',
           details: "Error al listar clientes: #{e.message}",

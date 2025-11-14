@@ -1,0 +1,38 @@
+# Cobertura de código
+coverage/
+.coverage
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Bases de datos
+*.sqlite3
+*.sqlite3-*
+db/*.sqlite3
+db/*.sqlite3-*
+
+# Logs
+log/
+*.log
+
+# Archivos temporales
+tmp/
+
+# Dependencias
+vendor/bundle/
+.bundle/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

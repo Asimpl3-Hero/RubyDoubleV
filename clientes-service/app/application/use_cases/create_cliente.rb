@@ -32,7 +32,7 @@ module Application
 
         # Register audit event
         register_audit_event(
-          entity_type: 'Cliente',
+          entity_type: 'cliente',
           entity_id: saved_cliente.id,
           action: 'CREATE',
           details: "Cliente creado: #{saved_cliente.nombre}",
@@ -43,7 +43,7 @@ module Application
       rescue StandardError => e
         # Register audit event for failure
         register_audit_event(
-          entity_type: 'Cliente',
+          entity_type: 'cliente',
           entity_id: nil,
           action: 'CREATE',
           details: "Error al crear cliente: #{e.message}",

@@ -17,7 +17,7 @@ module Application
 
         # Register audit event
         register_audit_event(
-          entity_type: 'Factura',
+          entity_type: 'factura',
           entity_id: factura.id,
           action: 'READ',
           details: "Factura #{factura.numero_factura} consultada",
@@ -28,7 +28,7 @@ module Application
       rescue StandardError => e
         # Register audit event for failure
         register_audit_event(
-          entity_type: 'Factura',
+          entity_type: 'factura',
           entity_id: id,
           action: 'READ',
           details: "Error al consultar factura: #{e.message}",

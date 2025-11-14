@@ -26,6 +26,10 @@ RSpec.configure do |config|
 
   # Database Cleaner configuration
   config.before(:suite) do
+    # Load database schema for test database
+    ActiveRecord::Schema.verbose = false
+    load File.join(__dir__, '../db/schema.rb')
+
     DatabaseCleaner.strategy = :transaction
     DatabaseCleaner.clean_with(:truncation)
   end

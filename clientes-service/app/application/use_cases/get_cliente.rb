@@ -17,7 +17,7 @@ module Application
 
         # Register audit event
         register_audit_event(
-          entity_type: 'Cliente',
+          entity_type: 'cliente',
           entity_id: cliente.id,
           action: 'READ',
           details: "Cliente consultado: #{cliente.nombre}",
@@ -28,7 +28,7 @@ module Application
       rescue StandardError => e
         # Register audit event for failure
         register_audit_event(
-          entity_type: 'Cliente',
+          entity_type: 'cliente',
           entity_id: id,
           action: 'READ',
           details: "Error al consultar cliente: #{e.message}",

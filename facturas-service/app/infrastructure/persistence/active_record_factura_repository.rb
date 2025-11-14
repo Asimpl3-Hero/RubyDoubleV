@@ -64,7 +64,7 @@ module Infrastructure
           cliente_id: model.cliente_id,
           numero_factura: model.numero_factura,
           fecha_emision: model.fecha_emision,
-          monto: model.monto,
+          monto: model.monto.to_f,
           estado: model.estado,
           items: model.items || [],
           created_at: model.created_at,

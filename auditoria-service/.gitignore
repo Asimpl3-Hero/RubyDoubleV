@@ -1,0 +1,32 @@
+# Cobertura de código
+coverage/
+.coverage
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Logs
+log/
+*.log
+
+# Archivos temporales
+tmp/
+
+# Dependencias
+vendor/bundle/
+.bundle/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
