@@ -12,7 +12,8 @@
 /tmp/
 
 # Environment variables
-.env
+.env.production      # Never commit production credentials
+.env.staging         # Never commit staging credentials
 .env.local
 .env.*.local
 

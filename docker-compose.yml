@@ -25,8 +25,9 @@ services:
     env_file:
       - ./.env
     environment:
+      # Only override if not set in .env or system environment
       - PORT=${AUDITORIA_PORT:-4003}
-      - MONGO_URL=mongodb:27017
+      - MONGO_URL=${MONGO_URL:-mongodb:27017}
       - MONGO_DATABASE=${MONGO_DATABASE:-auditoria_db}
       - RACK_ENV=${RACK_ENV:-development}
     depends_on:
@@ -49,9 +50,10 @@ services:
     env_file:
       - ./.env
     environment:
+      # Only override if not set in .env or system environment
       - PORT=${CLIENTES_PORT:-4001}
       - DATABASE_URL=${CLIENTES_DATABASE_URL:-sqlite3:db/clientes.sqlite3}
-      - AUDITORIA_SERVICE_URL=http://auditoria-service:${AUDITORIA_PORT:-4003}
+      - AUDITORIA_SERVICE_URL=${AUDITORIA_SERVICE_URL:-http://auditoria-service:${AUDITORIA_PORT:-4003}}
       - RACK_ENV=${RACK_ENV:-development}
     depends_on:
       - auditoria-service
@@ -75,10 +77,11 @@ services:
     env_file:
       - ./.env
     environment:
+      # Only override if not set in .env or system environment
       - PORT=${FACTURAS_PORT:-4002}
       - DATABASE_URL=${FACTURAS_DATABASE_URL:-sqlite3:db/facturas.sqlite3}
-      - CLIENTES_SERVICE_URL=http://clientes-service:${CLIENTES_PORT:-4001}
-      - AUDITORIA_SERVICE_URL=http://auditoria-service:${AUDITORIA_PORT:-4003}
+      - CLIENTES_SERVICE_URL=${CLIENTES_SERVICE_URL:-http://clientes-service:${CLIENTES_PORT:-4001}}
+      - AUDITORIA_SERVICE_URL=${AUDITORIA_SERVICE_URL:-http://auditoria-service:${AUDITORIA_PORT:-4003}}
       - RACK_ENV=${RACK_ENV:-development}
     depends_on:
       - clientes-service
