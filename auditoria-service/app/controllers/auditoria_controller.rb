@@ -11,8 +11,9 @@ require_relative '../infrastructure/persistence/mongo_audit_event_repository'
 class AuditoriaController < Sinatra::Base
   configure do
     set :show_exceptions, false
-    # Set app root to /app (Docker WORKDIR) by looking for config.ru
-    set :root, File.expand_path('../../..', __dir__)
+    # Set app root to /app (Docker WORKDIR)
+    # From /app/app/controllers/auditoria_controller.rb go up 2 levels to /app
+    set :root, File.expand_path('../..', __dir__)
     set :public_folder, File.join(settings.root, 'public')
     enable :static
   end
