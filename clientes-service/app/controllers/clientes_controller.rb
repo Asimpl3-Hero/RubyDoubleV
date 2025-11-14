@@ -10,9 +10,19 @@ require_relative '../infrastructure/persistence/active_record_cliente_repository
 class ClientesController < Sinatra::Base
   configure do
     set :show_exceptions, false
-    # Set app root to /app (Docker WORKDIR)
-    # From /app/app/controllers/clientes_controller.rb go up 2 levels to /app
-    set :root, File.expand_path('../..', __dir__)
+
+    # Find app root intelligently by looking for config.ru
+    # This works regardless of directory structure changes
+    app_root = ENV['APP_ROOT'] || begin
+      current_dir = __dir__
+      # Traverse up until we find config.ru or reach root
+      while current_dir != '/' && !File.exist?(File.join(current_dir, 'config.ru'))
+        current_dir = File.dirname(current_dir)
+      end
+      current_dir
+    end
+
+    set :root, app_root
     set :public_folder, File.join(settings.root, 'public')
     enable :static
   end
