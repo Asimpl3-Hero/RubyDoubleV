@@ -1,9 +1,67 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Auditoría Service API
   description: |
     API REST para el registro y consulta de eventos de auditoría del sistema FactuMarket.
     Este microservicio almacena todos los eventos de auditoría en MongoDB.
+
+    ## Arquitectura
+    - **Base de datos:** MongoDB (NoSQL)
+    - **Comunicación:** HTTP REST (HTTParty desde otros servicios)
+    - **Patrón:** Fire-and-forget (no bloquea operaciones principales)
+
+    ## Ejemplos de uso con cURL
+
+    ### 1. Registrar un evento de auditoría
+    ```bash
+    curl -X POST http://localhost:4003/auditoria \
+      -H "Content-Type: application/json" \
+      -d '{
+        "entity_type": "Cliente",
+        "entity_id": 1,
+        "action": "CREATE",
+        "details": "Cliente creado: Empresa ABC S.A.",
+        "status": "SUCCESS"
+      }'
+    ```
+
+    ### 2. Consultar eventos de un cliente específico
+    ```bash
+    curl http://localhost:4003/auditoria/cliente/1
+    ```
+
+    ### 3. Consultar eventos de una factura específica
+    ```bash
+    curl http://localhost:4003/auditoria/100
+    ```
+
+    ### 4. Listar eventos con filtros
+    ```bash
+    # Filtrar por acción CREATE
+    curl "http://localhost:4003/auditoria?action=CREATE&limit=50"
+
+    # Filtrar por estado SUCCESS
+    curl "http://localhost:4003/auditoria?status=SUCCESS&limit=100"
+
+    # Combinación de filtros
+    curl "http://localhost:4003/auditoria?action=CREATE&status=ERROR&limit=20"
+    ```
+
+    ### 5. Health check
+    ```bash
+    curl http://localhost:4003/health
+    ```
+
+    ## Tipos de Acciones (action)
+    - **CREATE:** Creación de una entidad
+    - **READ:** Consulta de una entidad específica
+    - **LIST:** Listado de entidades
+    - **UPDATE:** Actualización de una entidad
+    - **DELETE:** Eliminación de una entidad
+
+    ## Estados (status)
+    - **SUCCESS:** Operación exitosa
+    - **ERROR:** Operación fallida
   version: 1.0.0
   contact:
     name: FactuMarket API Support
@@ -52,20 +110,17 @@ paths:
                 action:
                   type: string
                   description: Acción realizada
-                  enum: [create, read, update, delete, list]
-                  example: create
+                  enum: [CREATE, READ, UPDATE, DELETE, LIST]
+                  example: CREATE
                 details:
-                  type: object
-                  description: Detalles adicionales del evento
-                  additionalProperties: true
-                  example:
-                    nombre: Juan Pérez
-                    correo: juan.perez@example.com
+                  type: string
+                  description: Descripción textual del evento
+                  example: "Cliente creado: Empresa ABC S.A."
                 status:
                   type: string
                   description: Estado del evento
-                  enum: [success, error]
-                  example: success
+                  enum: [SUCCESS, ERROR]
+                  example: SUCCESS
                 timestamp:
                   type: string
                   format: date-time
@@ -87,12 +142,74 @@ paths:
                     example: Evento de auditoría registrado
                   data:
                     $ref: '#/components/schemas/AuditEvent'
+              examples:
+                cliente_creado:
+                  summary: Cliente creado exitosamente
+                  value:
+                    success: true
+                    message: "Evento de auditoría registrado"
+                    data:
+                      id: "507f1f77bcf86cd799439011"
+                      entity_type: "Cliente"
+                      entity_id: 1
+                      action: "CREATE"
+                      details: "Cliente creado: Empresa ABC S.A."
+                      status: "SUCCESS"
+                      timestamp: "2025-01-13T10:35:00Z"
+                      created_at: "2025-01-13T10:35:00.123Z"
+                factura_creada:
+                  summary: Factura creada exitosamente
+                  value:
+                    success: true
+                    message: "Evento de auditoría registrado"
+                    data:
+                      id: "507f1f77bcf86cd799439012"
+                      entity_type: "Factura"
+                      entity_id: 100
+                      action: "CREATE"
+                      details: "Factura creada con monto: 1500000"
+                      status: "SUCCESS"
+                      timestamp: "2025-01-13T10:36:00Z"
+                      created_at: "2025-01-13T10:36:00.456Z"
+        '400':
+          description: Error de validación en los datos de entrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                entity_type_vacio:
+                  summary: entity_type requerido
+                  value:
+                    success: false
+                    error: "entity_type es requerido"
+                action_vacio:
+                  summary: action requerido
+                  value:
+                    success: false
+                    error: "action es requerido"
+                details_vacio:
+                  summary: details requerido
+                  value:
+                    success: false
+                    error: "details es requerido"
+                status_invalido:
+                  summary: status inválido
+                  value:
+                    success: false
+                    error: "status debe ser SUCCESS o ERROR"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                error_mongodb:
+                  summary: Error de conexión con MongoDB
+                  value:
+                    success: false
+                    error: "Error al conectar con MongoDB"
 
     get:
       tags:
@@ -107,16 +224,16 @@ paths:
           description: Filtrar por acción específica
           schema:
             type: string
-            enum: [create, read, update, delete, list]
-            example: create
+            enum: [CREATE, READ, UPDATE, DELETE, LIST]
+            example: CREATE
         - name: status
           in: query
           required: false
           description: Filtrar por estado del evento
           schema:
             type: string
-            enum: [success, error]
-            example: success
+            enum: [SUCCESS, ERROR]
+            example: SUCCESS
         - name: limit
           in: query
           required: false
@@ -146,6 +263,37 @@ paths:
                     type: integer
                     description: Número de eventos retornados
                     example: 50
+              examples:
+                lista_eventos:
+                  summary: Lista de eventos de auditoría
+                  value:
+                    success: true
+                    count: 3
+                    data:
+                      - id: "507f1f77bcf86cd799439011"
+                        entity_type: "Cliente"
+                        entity_id: 1
+                        action: "CREATE"
+                        details: "Cliente creado: Empresa ABC S.A."
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T10:35:00Z"
+                        created_at: "2025-01-13T10:35:00.123Z"
+                      - id: "507f1f77bcf86cd799439012"
+                        entity_type: "Factura"
+                        entity_id: 100
+                        action: "CREATE"
+                        details: "Factura creada con monto: 1500000"
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T10:36:00Z"
+                        created_at: "2025-01-13T10:36:00.456Z"
+                      - id: "507f1f77bcf86cd799439013"
+                        entity_type: "Cliente"
+                        entity_id: 1
+                        action: "READ"
+                        details: "Cliente consultado: Empresa ABC S.A."
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T10:37:00Z"
+                        created_at: "2025-01-13T10:37:00.789Z"
         '500':
           description: Error interno del servidor
           content:
@@ -186,6 +334,29 @@ paths:
                   count:
                     type: integer
                     example: 5
+              examples:
+                eventos_factura:
+                  summary: Eventos de una factura específica
+                  value:
+                    success: true
+                    count: 2
+                    data:
+                      - id: "507f1f77bcf86cd799439014"
+                        entity_type: "Factura"
+                        entity_id: 100
+                        action: "CREATE"
+                        details: "Factura creada con monto: 1500000"
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T10:40:00Z"
+                        created_at: "2025-01-13T10:40:00.123Z"
+                      - id: "507f1f77bcf86cd799439015"
+                        entity_type: "Factura"
+                        entity_id: 100
+                        action: "READ"
+                        details: "Factura consultada con ID: 100"
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T10:45:00Z"
+                        created_at: "2025-01-13T10:45:00.456Z"
         '500':
           description: Error interno del servidor
           content:
@@ -226,6 +397,37 @@ paths:
                   count:
                     type: integer
                     example: 10
+              examples:
+                eventos_cliente:
+                  summary: Eventos de un cliente específico
+                  value:
+                    success: true
+                    count: 3
+                    data:
+                      - id: "507f1f77bcf86cd799439016"
+                        entity_type: "Cliente"
+                        entity_id: 1
+                        action: "CREATE"
+                        details: "Cliente creado: Empresa ABC S.A."
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T09:00:00Z"
+                        created_at: "2025-01-13T09:00:00.123Z"
+                      - id: "507f1f77bcf86cd799439017"
+                        entity_type: "Cliente"
+                        entity_id: 1
+                        action: "READ"
+                        details: "Cliente consultado: Empresa ABC S.A."
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T09:15:00Z"
+                        created_at: "2025-01-13T09:15:00.456Z"
+                      - id: "507f1f77bcf86cd799439018"
+                        entity_type: "Cliente"
+                        entity_id: 1
+                        action: "READ"
+                        details: "Cliente consultado: Empresa ABC S.A."
+                        status: "SUCCESS"
+                        timestamp: "2025-01-13T09:30:00Z"
+                        created_at: "2025-01-13T09:30:00.789Z"
         '500':
           description: Error interno del servidor
           content:
@@ -283,25 +485,27 @@ components:
         action:
           type: string
           description: Acción realizada
-          enum: [create, read, update, delete, list]
-          example: create
+          enum: [CREATE, READ, UPDATE, DELETE, LIST]
+          example: CREATE
         details:
-          type: object
-          description: Detalles adicionales del evento
-          additionalProperties: true
-          example:
-            nombre: Juan Pérez
-            correo: juan.perez@example.com
+          type: string
+          description: Descripción textual del evento
+          example: "Cliente creado: Empresa ABC S.A."
         status:
           type: string
           description: Estado del evento
-          enum: [success, error]
-          example: success
+          enum: [SUCCESS, ERROR]
+          example: SUCCESS
         timestamp:
           type: string
           format: date-time
-          description: Timestamp del evento
-          example: "2025-01-13T12:00:00Z"
+          description: Timestamp del evento (ISO 8601)
+          example: "2025-01-13T10:35:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación del evento en la base de datos
+          example: "2025-01-13T10:35:00.123Z"
 
     Error:
       type: object

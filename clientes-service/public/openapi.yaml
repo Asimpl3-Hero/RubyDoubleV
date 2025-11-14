@@ -1,9 +1,56 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Clientes Service API
   description: |
     API REST para la gestión de clientes del sistema FactuMarket.
     Este microservicio maneja todas las operaciones relacionadas con los clientes.
+
+    ## Arquitectura
+    - **Base de datos:** SQLite (desarrollo), PostgreSQL (producción)
+    - **Patrón:** Clean Architecture con Use Cases
+    - **Auditoría:** Envía eventos automáticos al servicio de auditoría vía HTTP
+
+    ## Ejemplos de uso con cURL
+
+    ### 1. Crear un nuevo cliente
+    ```bash
+    curl -X POST http://localhost:4001/clientes \
+      -H "Content-Type: application/json" \
+      -d '{
+        "nombre": "Empresa ABC S.A.",
+        "identificacion": "900123456",
+        "correo": "contacto@empresaabc.com",
+        "direccion": "Calle 123 #45-67, Bogotá"
+      }'
+    ```
+
+    ### 2. Obtener un cliente específico
+    ```bash
+    curl http://localhost:4001/clientes/1
+    ```
+
+    ### 3. Listar todos los clientes
+    ```bash
+    curl http://localhost:4001/clientes
+    ```
+
+    ### 4. Health check
+    ```bash
+    curl http://localhost:4001/health
+    ```
+
+    ## Validaciones
+    Todos los campos son **obligatorios** al crear un cliente:
+    - **nombre:** No puede estar vacío
+    - **identificacion:** No puede estar vacía
+    - **correo:** Debe tener formato de email válido
+    - **direccion:** No puede estar vacía
+
+    ## Auditoría
+    Cada operación CRUD registra automáticamente un evento en el servicio de auditoría:
+    - `CREATE` - Al crear un cliente
+    - `READ` - Al consultar un cliente por ID
+    - `LIST` - Al listar todos los clientes
   version: 1.0.0
   contact:
     name: FactuMarket API Support
@@ -39,6 +86,7 @@ paths:
                 - nombre
                 - identificacion
                 - correo
+                - direccion
               properties:
                 nombre:
                   type: string
@@ -73,18 +121,82 @@ paths:
                     example: Cliente creado exitosamente
                   data:
                     $ref: '#/components/schemas/Cliente'
+              examples:
+                cliente_empresa:
+                  summary: Cliente tipo empresa creado
+                  value:
+                    success: true
+                    message: "Cliente creado exitosamente"
+                    data:
+                      id: 1
+                      nombre: "Empresa ABC S.A."
+                      identificacion: "900123456"
+                      correo: "contacto@empresaabc.com"
+                      direccion: "Calle 123 #45-67, Bogotá"
+                      created_at: "2025-01-13T10:30:00.000Z"
+                      updated_at: "2025-01-13T10:30:00.000Z"
+                cliente_persona:
+                  summary: Cliente tipo persona natural creado
+                  value:
+                    success: true
+                    message: "Cliente creado exitosamente"
+                    data:
+                      id: 2
+                      nombre: "Juan Pérez González"
+                      identificacion: "1234567890"
+                      correo: "juan.perez@example.com"
+                      direccion: "Carrera 45 #78-90, Medellín"
+                      created_at: "2025-01-13T10:35:00.000Z"
+                      updated_at: "2025-01-13T10:35:00.000Z"
         '400':
           description: Error de validación en los datos enviados
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                nombre_vacio:
+                  summary: Nombre vacío
+                  value:
+                    success: false
+                    error: "Nombre es requerido"
+                identificacion_vacia:
+                  summary: Identificación vacía
+                  value:
+                    success: false
+                    error: "Identificación es requerida"
+                correo_vacio:
+                  summary: Correo vacío
+                  value:
+                    success: false
+                    error: "Correo es requerido"
+                correo_invalido:
+                  summary: Formato de correo inválido
+                  value:
+                    success: false
+                    error: "Formato de correo inválido"
+                direccion_vacia:
+                  summary: Dirección vacía
+                  value:
+                    success: false
+                    error: "Dirección es requerida"
+                cliente_duplicado:
+                  summary: Cliente ya existe (identificación duplicada)
+                  value:
+                    success: false
+                    error: "Cliente con identificación 900123456 ya existe"
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                error_bd:
+                  summary: Error de conexión con la base de datos
+                  value:
+                    success: false
+                    error: "Error al conectar con la base de datos"
 
     get:
       tags:
@@ -111,12 +223,52 @@ paths:
                     type: integer
                     description: Número total de clientes
                     example: 10
+              examples:
+                lista_clientes:
+                  summary: Lista con múltiples clientes
+                  value:
+                    success: true
+                    count: 3
+                    data:
+                      - id: 1
+                        nombre: "Empresa ABC S.A."
+                        identificacion: "900123456"
+                        correo: "contacto@empresaabc.com"
+                        direccion: "Calle 123 #45-67, Bogotá"
+                        created_at: "2025-01-13T09:00:00.000Z"
+                        updated_at: "2025-01-13T09:00:00.000Z"
+                      - id: 2
+                        nombre: "Juan Pérez González"
+                        identificacion: "1234567890"
+                        correo: "juan.perez@example.com"
+                        direccion: "Carrera 45 #78-90, Medellín"
+                        created_at: "2025-01-13T09:15:00.000Z"
+                        updated_at: "2025-01-13T09:15:00.000Z"
+                      - id: 3
+                        nombre: "Tech Solutions Ltda."
+                        identificacion: "900987654"
+                        correo: "info@techsolutions.com"
+                        direccion: "Avenida 68 #45-12, Cali"
+                        created_at: "2025-01-13T09:30:00.000Z"
+                        updated_at: "2025-01-13T09:30:00.000Z"
+                lista_vacia:
+                  summary: No hay clientes registrados
+                  value:
+                    success: true
+                    count: 0
+                    data: []
         '500':
           description: Error interno del servidor
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                error_bd:
+                  summary: Error al consultar la base de datos
+                  value:
+                    success: false
+                    error: "Error al consultar la base de datos"
 
   /clientes/{id}:
     get:
@@ -146,12 +298,55 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/Cliente'
+              examples:
+                cliente_empresa:
+                  summary: Cliente tipo empresa encontrado
+                  value:
+                    success: true
+                    data:
+                      id: 1
+                      nombre: "Empresa ABC S.A."
+                      identificacion: "900123456"
+                      correo: "contacto@empresaabc.com"
+                      direccion: "Calle 123 #45-67, Bogotá"
+                      created_at: "2025-01-13T10:30:00.000Z"
+                      updated_at: "2025-01-13T10:30:00.000Z"
+                cliente_persona:
+                  summary: Cliente tipo persona encontrado
+                  value:
+                    success: true
+                    data:
+                      id: 2
+                      nombre: "Juan Pérez González"
+                      identificacion: "1234567890"
+                      correo: "juan.perez@example.com"
+                      direccion: "Carrera 45 #78-90, Medellín"
+                      created_at: "2025-01-13T10:35:00.000Z"
+                      updated_at: "2025-01-13T10:35:00.000Z"
         '404':
           description: Cliente no encontrado
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              examples:
+                cliente_no_encontrado:
+                  summary: Cliente no existe
+                  value:
+                    success: false
+                    error: "Cliente con ID 999 no encontrado"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                error_bd:
+                  summary: Error al consultar la base de datos
+                  value:
+                    success: false
+                    error: "Error al consultar la base de datos"
 
   /health:
     get:
