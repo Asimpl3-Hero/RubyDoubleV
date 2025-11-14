@@ -21,18 +21,21 @@ services:
     container_name: factumarket-auditoria
     restart: unless-stopped
     ports:
-      - "4003:4003"
+      - "${AUDITORIA_PORT:-4003}:${AUDITORIA_PORT:-4003}"
     env_file:
-      - ./auditoria-service/.env
+      - ./.env
     environment:
+      - PORT=${AUDITORIA_PORT:-4003}
       - MONGO_URL=mongodb:27017
+      - MONGO_DATABASE=${MONGO_DATABASE:-auditoria_db}
+      - RACK_ENV=${RACK_ENV:-development}
     depends_on:
       - mongodb
     volumes:
       - ./auditoria-service:/app
     networks:
       - factumarket-network
-    command: bundle exec puma config.ru -p 4003 -e development
+    command: bundle exec puma config.ru -p ${AUDITORIA_PORT:-4003} -e ${RACK_ENV:-development}
 
   # Clientes Service
   clientes-service:
@@ -42,11 +45,14 @@ services:
     container_name: factumarket-clientes
     restart: unless-stopped
     ports:
-      - "4001:4001"
+      - "${CLIENTES_PORT:-4001}:${CLIENTES_PORT:-4001}"
     env_file:
-      - ./clientes-service/.env
+      - ./.env
     environment:
-      - AUDITORIA_SERVICE_URL=http://auditoria-service:4003
+      - PORT=${CLIENTES_PORT:-4001}
+      - DATABASE_URL=${CLIENTES_DATABASE_URL:-sqlite3:db/clientes.sqlite3}
+      - AUDITORIA_SERVICE_URL=http://auditoria-service:${AUDITORIA_PORT:-4003}
+      - RACK_ENV=${RACK_ENV:-development}
     depends_on:
       - auditoria-service
     volumes:
@@ -55,7 +61,7 @@ services:
       - factumarket-network
     command: >
       sh -c "bundle exec rake db:migrate &&
-             bundle exec puma config.ru -p 4001 -e development"
+             bundle exec puma config.ru -p ${CLIENTES_PORT:-4001} -e ${RACK_ENV:-development}"
 
   # Facturas Service
   facturas-service:
@@ -65,12 +71,15 @@ services:
     container_name: factumarket-facturas
     restart: unless-stopped
     ports:
-      - "4002:4002"
+      - "${FACTURAS_PORT:-4002}:${FACTURAS_PORT:-4002}"
     env_file:
-      - ./facturas-service/.env
+      - ./.env
     environment:
-      - CLIENTES_SERVICE_URL=http://clientes-service:4001
-      - AUDITORIA_SERVICE_URL=http://auditoria-service:4003
+      - PORT=${FACTURAS_PORT:-4002}
+      - DATABASE_URL=${FACTURAS_DATABASE_URL:-sqlite3:db/facturas.sqlite3}
+      - CLIENTES_SERVICE_URL=http://clientes-service:${CLIENTES_PORT:-4001}
+      - AUDITORIA_SERVICE_URL=http://auditoria-service:${AUDITORIA_PORT:-4003}
+      - RACK_ENV=${RACK_ENV:-development}
     depends_on:
       - clientes-service
       - auditoria-service
@@ -80,7 +89,7 @@ services:
       - factumarket-network
     command: >
       sh -c "bundle exec rake db:migrate &&
-             bundle exec puma config.ru -p 4002 -e development"
+             bundle exec puma config.ru -p ${FACTURAS_PORT:-4002} -e ${RACK_ENV:-development}"
 
 networks:
   factumarket-network:
