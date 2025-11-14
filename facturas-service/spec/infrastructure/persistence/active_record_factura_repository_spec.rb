@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'active_record'
 require_relative '../../../app/infrastructure/persistence/active_record_factura_repository'
 require_relative '../../../app/domain/repositories/factura_repository'
-require_relative '../../../app/models/factura_model'
+require_relative '../../../app/infrastructure/persistence/factura_model'
 
 RSpec.describe Infrastructure::Persistence::ActiveRecordFacturaRepository do
   let(:repository) { described_class.new }

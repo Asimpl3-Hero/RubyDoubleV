@@ -64,40 +64,55 @@ Health check del servicio.
 ```
 auditoria-service/
 ├── app/
-│   ├── controllers/          # API REST con Sinatra
-│   │   └── auditoria_controller.rb
-│   ├── models/              # Modelos de datos
-│   │   └── audit_event.rb
-│   ├── application/         # Casos de uso
-│   │   └── use_cases/
-│   ├── domain/             # Entidades de dominio
-│   │   └── entities/
-│   └── infrastructure/     # Persistencia y adaptadores
-│       └── persistence/
-│           └── mongo_audit_repository.rb
-├── config/                 # Configuración del servicio
+│   ├── interfaces/             # Capa de Interfaces (Presentación)
+│   │   └── http/              # Controladores HTTP REST
+│   │       └── auditoria_controller.rb
+│   ├── application/           # Capa de Aplicación
+│   │   └── use_cases/        # Casos de uso del negocio
+│   ├── domain/               # Capa de Dominio (Núcleo)
+│   │   ├── entities/        # Entidades con lógica de negocio
+│   │   └── repositories/    # Interfaces de repositorios
+│   └── infrastructure/       # Capa de Infraestructura
+│       └── persistence/     # Implementaciones de persistencia (MongoDB)
+├── config/                   # Configuración del servicio
 │   └── environment.rb
-├── spec/                   # Tests con RSpec
+├── spec/                     # Tests con RSpec
 │   ├── spec_helper.rb
-│   ├── domain/
-│   ├── application/
-│   ├── infrastructure/
-│   └── integration/
-├── .env.example           # Variables de entorno ejemplo
-├── config.ru             # Configuración Rack
-├── Gemfile              # Dependencias Ruby
+│   ├── interfaces/          # Tests de controladores HTTP
+│   │   └── http/
+│   ├── domain/              # Tests de entidades
+│   ├── application/         # Tests de casos de uso
+│   └── infrastructure/      # Tests de persistencia
+├── public/                   # Assets públicos
+│   └── openapi.yaml         # Documentación OpenAPI 3.1.0
+├── .env.example             # Variables de entorno ejemplo
+├── config.ru               # Configuración Rack
+├── Gemfile                # Dependencias Ruby
 └── README.md
 ```
 
-### Descripción de Carpetas
+### Descripción de Capas (Clean Architecture)
 
-- **app/controllers**: Controladores REST que manejan las peticiones HTTP
-- **app/models**: Modelos que representan eventos de auditoría
-- **app/application/use_cases**: Lógica de aplicación y orquestación
-- **app/domain/entities**: Entidades de dominio con reglas de negocio
-- **app/infrastructure/persistence**: Implementación de repositorios y acceso a MongoDB
-- **config**: Configuración del entorno y base de datos
-- **spec**: Tests unitarios e integración organizados por capa
+#### 🎯 Capa de Interfaces (app/interfaces/)
+- **http/**: Controladores REST que manejan peticiones HTTP con Sinatra
+- Responsabilidad: Adaptadores de entrada (HTTP, CLI, etc.)
+- Dependencias: → Application Layer
+
+#### 💼 Capa de Aplicación (app/application/)
+- **use_cases/**: Orquestación de lógica de negocio
+- Responsabilidad: Casos de uso y flujos de la aplicación
+- Dependencias: → Domain Layer
+
+#### 🏛️ Capa de Dominio (app/domain/)
+- **entities/**: Entidades con reglas de negocio (AuditEvent)
+- **repositories/**: Interfaces/contratos de repositorios
+- Responsabilidad: Lógica de negocio pura, sin dependencias externas
+- Dependencias: Ninguna (núcleo independiente)
+
+#### 🔧 Capa de Infraestructura (app/infrastructure/)
+- **persistence/**: Implementación de repositorios (MongoDB)
+- Responsabilidad: Detalles técnicos (DB, APIs externas, etc.)
+- Dependencias: → Domain Layer (implementa interfaces)
 
 ## Instalación y Ejecución
 

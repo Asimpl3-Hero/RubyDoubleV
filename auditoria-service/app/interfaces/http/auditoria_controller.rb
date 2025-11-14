@@ -2,12 +2,13 @@
 
 require 'sinatra/base'
 require 'json'
-require_relative '../application/use_cases/create_factura'
-require_relative '../application/use_cases/get_factura'
-require_relative '../application/use_cases/list_facturas'
-require_relative '../infrastructure/persistence/active_record_factura_repository'
+require_relative '../../application/use_cases/create_audit_event'
+require_relative '../../application/use_cases/get_audit_events_by_factura'
+require_relative '../../application/use_cases/get_audit_events_by_cliente'
+require_relative '../../application/use_cases/list_audit_events'
+require_relative '../../infrastructure/persistence/mongo_audit_event_repository'
 
-class FacturasController < Sinatra::Base
+class AuditoriaController < Sinatra::Base
   configure do
     set :show_exceptions, false
 
@@ -36,20 +37,22 @@ class FacturasController < Sinatra::Base
     status 200
     {
       success: true,
-      service: 'facturas-service',
+      service: 'auditoria-service',
       version: '1.0.0',
       status: 'running',
-      description: 'API REST para la gestión de facturas electrónicas del sistema FactuMarket',
+      description: 'API REST para el registro y consulta de eventos de auditoría del sistema FactuMarket',
       timestamp: Time.now.utc.iso8601,
+      database: 'MongoDB',
       endpoints: {
         health: '/health',
         docs: '/docs',
         api_docs: '/api-docs',
-        facturas: {
-          create: 'POST /facturas',
-          get: 'GET /facturas/:id',
-          list: 'GET /facturas',
-          list_by_date: 'GET /facturas?fechaInicio=YYYY-MM-DD&fechaFin=YYYY-MM-DD'
+        auditoria: {
+          create: 'POST /auditoria',
+          get_by_factura: 'GET /auditoria/:factura_id',
+          get_by_cliente: 'GET /auditoria/cliente/:cliente_id',
+          list: 'GET /auditoria',
+          list_filtered: 'GET /auditoria?action=CREATE&status=SUCCESS&limit=100'
         }
       },
       links: {
@@ -59,80 +62,94 @@ class FacturasController < Sinatra::Base
     }.to_json
   end
 
-  # POST /facturas - Create a new factura
-  post '/facturas' do
+  # POST /auditoria - Create a new audit event
+  post '/auditoria' do
     data = JSON.parse(request.body.read)
 
-    use_case = Application::UseCases::CreateFactura.new(
-      factura_repository: repository,
-      clientes_service_url: clientes_url,
-      auditoria_service_url: auditoria_url
+    use_case = Application::UseCases::CreateAuditEvent.new(
+      audit_event_repository: repository
     )
 
-    factura = use_case.execute(
-      cliente_id: data['cliente_id'],
-      fecha_emision: data['fecha_emision'],
-      monto: data['monto'],
-      items: data['items'] || []
+    audit_event = use_case.execute(
+      entity_type: data['entity_type'],
+      entity_id: data['entity_id'],
+      action: data['action'],
+      details: data['details'],
+      status: data['status'],
+      timestamp: data['timestamp']
     )
 
     status 201
     {
       success: true,
-      message: 'Factura creada exitosamente',
-      data: factura.to_h
+      message: 'Evento de auditoría registrado',
+      data: audit_event.to_h
     }.to_json
   rescue ArgumentError => e
     status 400
     { success: false, error: e.message }.to_json
   rescue StandardError => e
-    # Check if it's an infrastructure error (timeout, connection issues, etc.)
-    if e.message.match?(/timeout|connection|unavailable|timed out|execution expired/i)
-      status 503
-      { success: false, error: e.message }.to_json
-    else
-      # Business logic errors (like "Cliente no existe") return 422
-      status 422
-      { success: false, error: e.message }.to_json
-    end
-  end
-
-  # GET /facturas/:id - Get factura by ID
-  get '/facturas/:id' do
-    use_case = Application::UseCases::GetFactura.new(
-      factura_repository: repository,
-      auditoria_service_url: auditoria_url
-    )
-
-    factura = use_case.execute(id: params[:id].to_i)
-
-    status 200
-    {
-      success: true,
-      data: factura.to_h
-    }.to_json
-  rescue StandardError => e
-    status 404
+    status 500
     { success: false, error: e.message }.to_json
   end
 
-  # GET /facturas - List facturas with optional date range filter
-  get '/facturas' do
-    use_case = Application::UseCases::ListFacturas.new(
-      factura_repository: repository,
-      auditoria_service_url: auditoria_url
+  # GET /auditoria/:factura_id - Get audit events for a specific factura
+  get '/auditoria/:factura_id' do
+    use_case = Application::UseCases::GetAuditEventsByFactura.new(
+      audit_event_repository: repository
     )
 
-    facturas = use_case.execute(
-      fecha_inicio: params['fechaInicio'],
-      fecha_fin: params['fechaFin']
+    events = use_case.execute(factura_id: params[:factura_id].to_i)
+
+    status 200
+    {
+      success: true,
+      data: events.map(&:to_h),
+      count: events.count
+    }.to_json
+  rescue StandardError => e
+    status 500
+    { success: false, error: e.message }.to_json
+  end
+
+  # GET /auditoria/cliente/:cliente_id - Get audit events for a specific cliente
+  get '/auditoria/cliente/:cliente_id' do
+    use_case = Application::UseCases::GetAuditEventsByCliente.new(
+      audit_event_repository: repository
+    )
+
+    events = use_case.execute(cliente_id: params[:cliente_id].to_i)
+
+    status 200
+    {
+      success: true,
+      data: events.map(&:to_h),
+      count: events.count
+    }.to_json
+  rescue StandardError => e
+    status 500
+    { success: false, error: e.message }.to_json
+  end
+
+  # GET /auditoria - Get all audit events (paginated)
+  get '/auditoria' do
+    limit = (params['limit'] || 100).to_i
+
+    use_case = Application::UseCases::ListAuditEvents.new(
+      audit_event_repository: repository
+    )
+
+    events = use_case.execute(
+      action: params['action'],
+      status: params['status'],
+      limit: limit
     )
 
     status 200
     {
       success: true,
-      data: facturas.map(&:to_h),
-      count: facturas.count
+      data: events.map(&:to_h),
+      count: events.count
     }.to_json
   rescue StandardError => e
     status 500
@@ -144,7 +161,7 @@ class FacturasController < Sinatra::Base
     status 200
     {
       success: true,
-      service: 'facturas-service',
+      service: 'auditoria-service',
       status: 'running',
       timestamp: Time.now.utc.iso8601
     }.to_json
@@ -192,7 +209,7 @@ class FacturasController < Sinatra::Base
       <html lang="es">
       <head>
         <meta charset="UTF-8">
-        <title>Facturas Service API - Swagger UI</title>
+        <title>Auditoría Service API - Swagger UI</title>
         <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css">
         <style>
           body { margin: 0; padding: 0; }
@@ -227,14 +244,43 @@ class FacturasController < Sinatra::Base
   private
 
   def repository
-    @repository ||= Infrastructure::Persistence::ActiveRecordFacturaRepository.new
+    @repository ||= Infrastructure::Persistence::MongoAuditEventRepository.new(mongo_client)
   end
 
-  def clientes_url
-    ENV['CLIENTES_SERVICE_URL'] || 'http://localhost:4001'
+  def mongo_client
+    timeout = ENV['RACK_ENV'] == 'test' ? 1 : 30
+
+    # Build connection options
+    options = {
+      database: mongo_database,
+      server_selection_timeout: timeout,
+      connect_timeout: timeout,
+      socket_timeout: timeout
+    }
+
+    # Add authentication if credentials are provided
+    if mongo_username && mongo_password
+      options[:user] = mongo_username
+      options[:password] = mongo_password
+      options[:auth_source] = 'admin'  # MongoDB default admin database
+    end
+
+    @mongo_client ||= Mongo::Client.new([mongo_url], options)
   end
 
-  def auditoria_url
-    ENV['AUDITORIA_SERVICE_URL'] || 'http://localhost:4003'
+  def mongo_url
+    ENV['MONGO_URL'] || 'localhost:27017'
+  end
+
+  def mongo_database
+    ENV['MONGO_DATABASE'] || 'auditoria_db'
+  end
+
+  def mongo_username
+    ENV['MONGO_USERNAME']
+  end
+
+  def mongo_password
+    ENV['MONGO_PASSWORD']
   end
 end

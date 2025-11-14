@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'active_record'
 require_relative '../../../app/infrastructure/persistence/active_record_cliente_repository'
 require_relative '../../../app/domain/repositories/cliente_repository'
-require_relative '../../../app/models/cliente_model'
+require_relative '../../../app/infrastructure/persistence/cliente_model'
 
 RSpec.describe Infrastructure::Persistence::ActiveRecordClienteRepository do
   let(:repository) { described_class.new }

@@ -1,6 +1,6 @@
 FROM ruby:3.2-slim
 
-# Install system dependencies required for building gems
+# Install system dependencies
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
     build-essential \
@@ -9,8 +9,7 @@ RUN apt-get update -qq && \
     pkg-config \
     libssl-dev \
     libyaml-dev \
-    git \
-    curl && \
+    git && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory

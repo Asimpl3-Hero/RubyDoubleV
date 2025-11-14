@@ -15,7 +15,7 @@ Gestiona el ciclo de vida completo de las facturas electrónicas, permitiendo:
 ## Tecnología
 
 - **Arquitectura**: Clean Architecture + MVC
-- **Base de datos**: SQLite (desarrollo) / Oracle (producción)
+- **Base de datos**: SQLite3
 - **Framework**: Sinatra
 - **ORM**: ActiveRecord
 - **Puerto**: 4002
@@ -95,64 +95,76 @@ Health check del servicio.
 ```
 facturas-service/
 ├── app/
-│   ├── controllers/                    # API REST con Sinatra
-│   │   └── facturas_controller.rb
-│   ├── models/                        # Modelos ActiveRecord
-│   │   └── factura_model.rb
-│   ├── domain/                        # Capa de dominio
-│   │   ├── entities/
-│   │   │   └── factura.rb            # Entidad con reglas de negocio
-│   │   ├── repositories/
-│   │   │   └── factura_repository.rb  # Interface del repositorio
-│   │   └── services/
-│   │       └── cliente_validator.rb   # Validador de cliente
-│   ├── application/                   # Casos de uso
-│   │   └── use_cases/
+│   ├── interfaces/                    # Capa de Interfaces (Presentación)
+│   │   └── http/                     # Controladores HTTP REST
+│   │       └── facturas_controller.rb
+│   ├── application/                   # Capa de Aplicación
+│   │   └── use_cases/                # Casos de uso del negocio
 │   │       ├── create_factura.rb
 │   │       ├── get_factura.rb
 │   │       └── list_facturas.rb
-│   └── infrastructure/                # Adaptadores
-│       └── persistence/
-│           └── active_record_factura_repository.rb
-├── config/                           # Configuración
+│   ├── domain/                        # Capa de Dominio (Núcleo)
+│   │   ├── entities/                 # Entidades con lógica de negocio
+│   │   │   └── factura.rb
+│   │   ├── repositories/             # Interfaces de repositorios
+│   │   │   └── factura_repository.rb
+│   │   └── services/                 # Servicios de dominio
+│   │       └── cliente_validator.rb  # Validación de cliente
+│   └── infrastructure/                # Capa de Infraestructura
+│       └── persistence/              # Implementaciones de persistencia
+│           ├── active_record_factura_repository.rb
+│           └── factura_model.rb      # Modelo ActiveRecord
+├── config/                            # Configuración
 │   ├── database.yml
 │   └── environment.rb
-├── db/                              # Base de datos
+├── db/                                # Base de datos
 │   ├── migrate/
 │   │   └── 001_create_facturas.rb
 │   └── schema.rb
-├── spec/                            # Tests con RSpec
+├── spec/                              # Tests con RSpec
 │   ├── spec_helper.rb
 │   ├── integration_spec_helper.rb
-│   ├── domain/
-│   ├── application/
-│   ├── infrastructure/
-│   └── integration/
+│   ├── interfaces/                   # Tests de controladores HTTP
+│   │   └── http/
+│   ├── domain/                       # Tests de entidades y servicios
+│   ├── application/                  # Tests de casos de uso
+│   └── infrastructure/               # Tests de persistencia
 ├── .env.example
 ├── config.ru
 ├── Gemfile
 └── README.md
 ```
 
-### Descripción de Carpetas
+### Descripción de Capas (Clean Architecture)
 
-- **app/controllers**: Controladores REST que exponen la API HTTP
-- **app/models**: Modelos ActiveRecord para persistencia
-- **app/domain/entities**: Entidades de dominio con reglas de negocio
-- **app/domain/repositories**: Interfaces de repositorios
-- **app/domain/services**: Servicios de dominio (ej: validación de cliente)
-- **app/application/use_cases**: Casos de uso que orquestan la lógica
-- **app/infrastructure/persistence**: Implementaciones de repositorios
-- **config**: Configuración de base de datos y entorno
-- **db/migrate**: Migraciones de base de datos
-- **spec**: Tests organizados por capa arquitectónica
+#### 🎯 Capa de Interfaces (app/interfaces/)
+- **http/**: Controladores REST que manejan peticiones HTTP con Sinatra
+- Responsabilidad: Adaptadores de entrada (HTTP, CLI, etc.)
+- Dependencias: → Application Layer
+
+#### 💼 Capa de Aplicación (app/application/)
+- **use_cases/**: Orquestación de lógica de negocio
+- Responsabilidad: Casos de uso y flujos de la aplicación
+- Dependencias: → Domain Layer
+
+#### 🏛️ Capa de Dominio (app/domain/)
+- **entities/**: Entidades con reglas de negocio (Factura)
+- **repositories/**: Interfaces/contratos de repositorios
+- **services/**: Servicios de dominio para lógica que no pertenece a una entidad
+- Responsabilidad: Lógica de negocio pura, sin dependencias externas
+- Dependencias: Ninguna (núcleo independiente)
+
+#### 🔧 Capa de Infraestructura (app/infrastructure/)
+- **persistence/**: Implementación de repositorios y modelos ActiveRecord
+- Responsabilidad: Detalles técnicos (DB, APIs externas, etc.)
+- Dependencias: → Domain Layer (implementa interfaces)
 
 ## Instalación y Ejecución
 
 ### Requisitos
 - Ruby >= 2.7.0
 - Bundler
-- SQLite3 (desarrollo) u Oracle (producción)
+- SQLite3
 - **Clientes Service** corriendo en puerto 4001 (requerido)
 
 ### Setup

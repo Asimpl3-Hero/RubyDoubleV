@@ -2,7 +2,7 @@
 
 require_relative '../../domain/repositories/factura_repository'
 require_relative '../../domain/entities/factura'
-require_relative '../../models/factura_model'
+require_relative './factura_model'
 
 module Infrastructure
   module Persistence

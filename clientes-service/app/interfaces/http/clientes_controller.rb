@@ -2,13 +2,12 @@
 
 require 'sinatra/base'
 require 'json'
-require_relative '../application/use_cases/create_audit_event'
-require_relative '../application/use_cases/get_audit_events_by_factura'
-require_relative '../application/use_cases/get_audit_events_by_cliente'
-require_relative '../application/use_cases/list_audit_events'
-require_relative '../infrastructure/persistence/mongo_audit_event_repository'
+require_relative '../../application/use_cases/create_cliente'
+require_relative '../../application/use_cases/get_cliente'
+require_relative '../../application/use_cases/list_clientes'
+require_relative '../../infrastructure/persistence/active_record_cliente_repository'
 
-class AuditoriaController < Sinatra::Base
+class ClientesController < Sinatra::Base
   configure do
     set :show_exceptions, false
 
@@ -37,22 +36,19 @@ class AuditoriaController < Sinatra::Base
     status 200
     {
       success: true,
-      service: 'auditoria-service',
+      service: 'clientes-service',
       version: '1.0.0',
       status: 'running',
-      description: 'API REST para el registro y consulta de eventos de auditoría del sistema FactuMarket',
+      description: 'API REST para la gestión de clientes del sistema FactuMarket',
       timestamp: Time.now.utc.iso8601,
-      database: 'MongoDB',
       endpoints: {
         health: '/health',
         docs: '/docs',
         api_docs: '/api-docs',
-        auditoria: {
-          create: 'POST /auditoria',
-          get_by_factura: 'GET /auditoria/:factura_id',
-          get_by_cliente: 'GET /auditoria/cliente/:cliente_id',
-          list: 'GET /auditoria',
-          list_filtered: 'GET /auditoria?action=CREATE&status=SUCCESS&limit=100'
+        clientes: {
+          create: 'POST /clientes',
+          get: 'GET /clientes/:id',
+          list: 'GET /clientes'
         }
       },
       links: {
@@ -62,28 +58,27 @@ class AuditoriaController < Sinatra::Base
     }.to_json
   end
 
-  # POST /auditoria - Create a new audit event
-  post '/auditoria' do
+  # POST /clientes - Create a new cliente
+  post '/clientes' do
     data = JSON.parse(request.body.read)
 
-    use_case = Application::UseCases::CreateAuditEvent.new(
-      audit_event_repository: repository
+    use_case = Application::UseCases::CreateCliente.new(
+      cliente_repository: repository,
+      auditoria_service_url: auditoria_url
     )
 
-    audit_event = use_case.execute(
-      entity_type: data['entity_type'],
-      entity_id: data['entity_id'],
-      action: data['action'],
-      details: data['details'],
-      status: data['status'],
-      timestamp: data['timestamp']
+    cliente = use_case.execute(
+      nombre: data['nombre'],
+      identificacion: data['identificacion'],
+      correo: data['correo'],
+      direccion: data['direccion']
     )
 
     status 201
     {
       success: true,
-      message: 'Evento de auditoría registrado',
-      data: audit_event.to_h
+      message: 'Cliente creado exitosamente',
+      data: cliente.to_h
     }.to_json
   rescue ArgumentError => e
     status 400
@@ -93,63 +88,39 @@ class AuditoriaController < Sinatra::Base
     { success: false, error: e.message }.to_json
   end
 
-  # GET /auditoria/:factura_id - Get audit events for a specific factura
-  get '/auditoria/:factura_id' do
-    use_case = Application::UseCases::GetAuditEventsByFactura.new(
-      audit_event_repository: repository
+  # GET /clientes/:id - Get cliente by ID
+  get '/clientes/:id' do
+    use_case = Application::UseCases::GetCliente.new(
+      cliente_repository: repository,
+      auditoria_service_url: auditoria_url
     )
 
-    events = use_case.execute(factura_id: params[:factura_id].to_i)
+    cliente = use_case.execute(id: params[:id].to_i)
 
     status 200
     {
       success: true,
-      data: events.map(&:to_h),
-      count: events.count
+      data: cliente.to_h
     }.to_json
   rescue StandardError => e
-    status 500
+    status 404
     { success: false, error: e.message }.to_json
   end
 
-  # GET /auditoria/cliente/:cliente_id - Get audit events for a specific cliente
-  get '/auditoria/cliente/:cliente_id' do
-    use_case = Application::UseCases::GetAuditEventsByCliente.new(
-      audit_event_repository: repository
+  # GET /clientes - List all clientes
+  get '/clientes' do
+    use_case = Application::UseCases::ListClientes.new(
+      cliente_repository: repository,
+      auditoria_service_url: auditoria_url
     )
 
-    events = use_case.execute(cliente_id: params[:cliente_id].to_i)
+    clientes = use_case.execute
 
     status 200
     {
       success: true,
-      data: events.map(&:to_h),
-      count: events.count
-    }.to_json
-  rescue StandardError => e
-    status 500
-    { success: false, error: e.message }.to_json
-  end
-
-  # GET /auditoria - Get all audit events (paginated)
-  get '/auditoria' do
-    limit = (params['limit'] || 100).to_i
-
-    use_case = Application::UseCases::ListAuditEvents.new(
-      audit_event_repository: repository
-    )
-
-    events = use_case.execute(
-      action: params['action'],
-      status: params['status'],
-      limit: limit
-    )
-
-    status 200
-    {
-      success: true,
-      data: events.map(&:to_h),
-      count: events.count
+      data: clientes.map(&:to_h),
+      count: clientes.count
     }.to_json
   rescue StandardError => e
     status 500
@@ -161,7 +132,7 @@ class AuditoriaController < Sinatra::Base
     status 200
     {
       success: true,
-      service: 'auditoria-service',
+      service: 'clientes-service',
       status: 'running',
       timestamp: Time.now.utc.iso8601
     }.to_json
@@ -209,7 +180,7 @@ class AuditoriaController < Sinatra::Base
       <html lang="es">
       <head>
         <meta charset="UTF-8">
-        <title>Auditoría Service API - Swagger UI</title>
+        <title>Clientes Service API - Swagger UI</title>
         <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css">
         <style>
           body { margin: 0; padding: 0; }
@@ -244,25 +215,10 @@ class AuditoriaController < Sinatra::Base
   private
 
   def repository
-    @repository ||= Infrastructure::Persistence::MongoAuditEventRepository.new(mongo_client)
+    @repository ||= Infrastructure::Persistence::ActiveRecordClienteRepository.new
   end
 
-  def mongo_client
-    timeout = ENV['RACK_ENV'] == 'test' ? 1 : 30
-    @mongo_client ||= Mongo::Client.new(
-      [mongo_url],
-      database: mongo_database,
-      server_selection_timeout: timeout,
-      connect_timeout: timeout,
-      socket_timeout: timeout
-    )
-  end
-
-  def mongo_url
-    ENV['MONGO_URL'] || 'localhost:27017'
-  end
-
-  def mongo_database
-    ENV['MONGO_DATABASE'] || 'auditoria_db'
+  def auditoria_url
+    ENV['AUDITORIA_SERVICE_URL'] || 'http://localhost:4003'
   end
 end

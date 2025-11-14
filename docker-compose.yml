@@ -7,7 +7,9 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_DATABASE: auditoria_db
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-auditoria_db}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-factumarket_secure_2025}
     volumes:
       - mongodb_data:/data/db
     networks:
@@ -29,6 +31,8 @@ services:
       - PORT=${AUDITORIA_PORT:-4003}
       - MONGO_URL=${MONGO_URL:-mongodb:27017}
       - MONGO_DATABASE=${MONGO_DATABASE:-auditoria_db}
+      - MONGO_USERNAME=${MONGO_USERNAME:-admin}
+      - MONGO_PASSWORD=${MONGO_PASSWORD:-factumarket_secure_2025}
       - RACK_ENV=${RACK_ENV:-development}
     depends_on:
       - mongodb
@@ -56,7 +60,8 @@ services:
       - AUDITORIA_SERVICE_URL=${AUDITORIA_SERVICE_URL:-http://auditoria-service:${AUDITORIA_PORT:-4003}}
       - RACK_ENV=${RACK_ENV:-development}
     depends_on:
-      - auditoria-service
+      auditoria-service:
+        condition: service_started
     volumes:
       - ./clientes-service:/app
     networks:
@@ -84,8 +89,10 @@ services:
       - AUDITORIA_SERVICE_URL=${AUDITORIA_SERVICE_URL:-http://auditoria-service:${AUDITORIA_PORT:-4003}}
       - RACK_ENV=${RACK_ENV:-development}
     depends_on:
-      - clientes-service
-      - auditoria-service
+      clientes-service:
+        condition: service_started
+      auditoria-service:
+        condition: service_started
     volumes:
       - ./facturas-service:/app
     networks:

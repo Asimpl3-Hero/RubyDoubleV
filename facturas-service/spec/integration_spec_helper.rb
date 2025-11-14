@@ -6,7 +6,7 @@ require 'bundler/setup'
 Bundler.require(:test)
 
 require_relative '../config/environment'
-require_relative '../app/controllers/facturas_controller'
+require_relative '../app/interfaces/http/facturas_controller'
 
 require 'rack/test'
 require 'webmock/rspec'

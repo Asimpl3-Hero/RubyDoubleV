@@ -5,7 +5,7 @@ require 'bundler/setup'
 Bundler.require(:test)
 
 require_relative '../config/environment'
-require_relative '../app/controllers/clientes_controller'
+require_relative '../app/interfaces/http/clientes_controller'
 
 require 'rack/test'
 require 'webmock/rspec'

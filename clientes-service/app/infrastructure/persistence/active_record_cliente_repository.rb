@@ -2,7 +2,7 @@
 
 require_relative '../../domain/repositories/cliente_repository'
 require_relative '../../domain/entities/cliente'
-require_relative '../../models/cliente_model'
+require_relative './cliente_model'
 
 module Infrastructure
   module Persistence

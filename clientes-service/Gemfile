@@ -9,7 +9,7 @@ gem 'puma', '~> 6.0'
 
 # Database
 gem 'activerecord', '~> 7.0'
-gem 'sqlite3', '~> 1.6' # Using SQLite as Oracle replacement for development
+gem 'sqlite3', '~> 1.6'
 gem 'standalone_migrations', '~> 7.1'
 
 # HTTP Client for service communication

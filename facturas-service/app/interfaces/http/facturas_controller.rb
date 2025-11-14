@@ -2,12 +2,12 @@
 
 require 'sinatra/base'
 require 'json'
-require_relative '../application/use_cases/create_cliente'
-require_relative '../application/use_cases/get_cliente'
-require_relative '../application/use_cases/list_clientes'
-require_relative '../infrastructure/persistence/active_record_cliente_repository'
+require_relative '../../application/use_cases/create_factura'
+require_relative '../../application/use_cases/get_factura'
+require_relative '../../application/use_cases/list_facturas'
+require_relative '../../infrastructure/persistence/active_record_factura_repository'
 
-class ClientesController < Sinatra::Base
+class FacturasController < Sinatra::Base
   configure do
     set :show_exceptions, false
 
@@ -36,19 +36,20 @@ class ClientesController < Sinatra::Base
     status 200
     {
       success: true,
-      service: 'clientes-service',
+      service: 'facturas-service',
       version: '1.0.0',
       status: 'running',
-      description: 'API REST para la gestión de clientes del sistema FactuMarket',
+      description: 'API REST para la gestión de facturas electrónicas del sistema FactuMarket',
       timestamp: Time.now.utc.iso8601,
       endpoints: {
         health: '/health',
         docs: '/docs',
         api_docs: '/api-docs',
-        clientes: {
-          create: 'POST /clientes',
-          get: 'GET /clientes/:id',
-          list: 'GET /clientes'
+        facturas: {
+          create: 'POST /facturas',
+          get: 'GET /facturas/:id',
+          list: 'GET /facturas',
+          list_by_date: 'GET /facturas?fechaInicio=YYYY-MM-DD&fechaFin=YYYY-MM-DD'
         }
       },
       links: {
@@ -58,69 +59,80 @@ class ClientesController < Sinatra::Base
     }.to_json
   end
 
-  # POST /clientes - Create a new cliente
-  post '/clientes' do
+  # POST /facturas - Create a new factura
+  post '/facturas' do
     data = JSON.parse(request.body.read)
 
-    use_case = Application::UseCases::CreateCliente.new(
-      cliente_repository: repository,
+    use_case = Application::UseCases::CreateFactura.new(
+      factura_repository: repository,
+      clientes_service_url: clientes_url,
       auditoria_service_url: auditoria_url
     )
 
-    cliente = use_case.execute(
-      nombre: data['nombre'],
-      identificacion: data['identificacion'],
-      correo: data['correo'],
-      direccion: data['direccion']
+    factura = use_case.execute(
+      cliente_id: data['cliente_id'],
+      fecha_emision: data['fecha_emision'],
+      monto: data['monto'],
+      items: data['items'] || []
     )
 
     status 201
     {
       success: true,
-      message: 'Cliente creado exitosamente',
-      data: cliente.to_h
+      message: 'Factura creada exitosamente',
+      data: factura.to_h
     }.to_json
   rescue ArgumentError => e
     status 400
     { success: false, error: e.message }.to_json
   rescue StandardError => e
-    status 500
-    { success: false, error: e.message }.to_json
+    # Check if it's an infrastructure error (timeout, connection issues, etc.)
+    if e.message.match?(/timeout|connection|unavailable|timed out|execution expired/i)
+      status 503
+      { success: false, error: e.message }.to_json
+    else
+      # Business logic errors (like "Cliente no existe") return 422
+      status 422
+      { success: false, error: e.message }.to_json
+    end
   end
 
-  # GET /clientes/:id - Get cliente by ID
-  get '/clientes/:id' do
-    use_case = Application::UseCases::GetCliente.new(
-      cliente_repository: repository,
+  # GET /facturas/:id - Get factura by ID
+  get '/facturas/:id' do
+    use_case = Application::UseCases::GetFactura.new(
+      factura_repository: repository,
       auditoria_service_url: auditoria_url
     )
 
-    cliente = use_case.execute(id: params[:id].to_i)
+    factura = use_case.execute(id: params[:id].to_i)
 
     status 200
     {
       success: true,
-      data: cliente.to_h
+      data: factura.to_h
     }.to_json
   rescue StandardError => e
     status 404
     { success: false, error: e.message }.to_json
   end
 
-  # GET /clientes - List all clientes
-  get '/clientes' do
-    use_case = Application::UseCases::ListClientes.new(
-      cliente_repository: repository,
+  # GET /facturas - List facturas with optional date range filter
+  get '/facturas' do
+    use_case = Application::UseCases::ListFacturas.new(
+      factura_repository: repository,
       auditoria_service_url: auditoria_url
     )
 
-    clientes = use_case.execute
+    facturas = use_case.execute(
+      fecha_inicio: params['fechaInicio'],
+      fecha_fin: params['fechaFin']
+    )
 
     status 200
     {
       success: true,
-      data: clientes.map(&:to_h),
-      count: clientes.count
+      data: facturas.map(&:to_h),
+      count: facturas.count
     }.to_json
   rescue StandardError => e
     status 500
@@ -132,7 +144,7 @@ class ClientesController < Sinatra::Base
     status 200
     {
       success: true,
-      service: 'clientes-service',
+      service: 'facturas-service',
       status: 'running',
       timestamp: Time.now.utc.iso8601
     }.to_json
@@ -180,7 +192,7 @@ class ClientesController < Sinatra::Base
       <html lang="es">
       <head>
         <meta charset="UTF-8">
-        <title>Clientes Service API - Swagger UI</title>
+        <title>Facturas Service API - Swagger UI</title>
         <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.3/swagger-ui.css">
         <style>
           body { margin: 0; padding: 0; }
@@ -215,7 +227,11 @@ class ClientesController < Sinatra::Base
   private
 
   def repository
-    @repository ||= Infrastructure::Persistence::ActiveRecordClienteRepository.new
+    @repository ||= Infrastructure::Persistence::ActiveRecordFacturaRepository.new
+  end
+
+  def clientes_url
+    ENV['CLIENTES_SERVICE_URL'] || 'http://localhost:4001'
   end
 
   def auditoria_url
