@@ -1,146 +1,134 @@
-# Guía de Testing - RubyDoubleV
+# 🧪 Guía de Testing - FactuMarket
 
-Este proyecto utiliza **RSpec** para testing y **SimpleCov** para análisis de cobertura de código.
+> Testing automatizado con **RSpec**, cobertura con **SimpleCov** y mocks con **WebMock**.
 
-## 🧪 Ejecutar Tests
+---
 
-### Tests de Todos los Servicios
+## 📋 Tabla de Contenidos
 
-```bash
-# Ejecutar todos los tests (unit + integration)
-rake test
+- [Ejecutar Tests](#-ejecutar-tests)
+- [Cobertura de Código](#-cobertura-de-código)
+- [Estructura de Tests](#-estructura-de-tests)
+- [Mejores Prácticas](#-mejores-prácticas)
+- [Troubleshooting](#-troubleshooting)
 
-# Ejecutar solo tests unitarios (Domain + Application + Infrastructure)
-rake test_unit
-```
+---
 
-### Tests por Servicio Individual
+## ▶️ Ejecutar Tests
+
+### Comandos Rake (Recomendado)
+
+| Comando | Descripción |
+|---------|-------------|
+| `rake test` | Todos los tests de todos los servicios |
+| `rake test_unit` | Solo tests unitarios (Domain + Application + Infrastructure) |
+| `rake coverage` | Generar reportes de cobertura de todos los servicios |
+| `rake coverage_summary` | Ver resumen de cobertura en terminal |
+| `rake clean_coverage` | Eliminar reportes de cobertura |
+
+### Por Servicio Individual
 
 ```bash
 # Auditoría Service
 rake auditoria:test          # Todos los tests
 rake auditoria:test_unit     # Solo unitarios
+rake auditoria:coverage      # Cobertura
 
 # Clientes Service
-rake clientes:test           # Todos los tests
-rake clientes:test_unit      # Solo unitarios
+rake clientes:test
+rake clientes:test_unit
+rake clientes:coverage
 
 # Facturas Service
-rake facturas:test           # Todos los tests
-rake facturas:test_unit      # Solo unitarios
-```
-
-### Tests Directos con RSpec
-
-También puedes ejecutar RSpec directamente en cada servicio:
-
-```bash
-# Entrar al servicio
-cd auditoria-service
-
-# Todos los tests
-bundle exec rspec
-
-# Tests específicos por capa
-bundle exec rspec spec/domain          # Solo Domain layer
-bundle exec rspec spec/application     # Solo Application layer
-bundle exec rspec spec/infrastructure  # Solo Infrastructure layer
-bundle exec rspec spec/integration     # Solo Integration tests
-
-# Un archivo específico
-bundle exec rspec spec/domain/entities/audit_event_spec.rb
-
-# Un test específico (por línea)
-bundle exec rspec spec/domain/entities/audit_event_spec.rb:12
-```
-
-## 📊 Cobertura de Código
-
-### Generar Reportes de Cobertura
-
-```bash
-# Generar cobertura de todos los servicios
-rake coverage
-
-# Cobertura por servicio individual
-rake auditoria:coverage
-rake clientes:coverage
+rake facturas:test
+rake facturas:test_unit
 rake facturas:coverage
 ```
 
-Los reportes HTML se generan en:
-- `auditoria-service/coverage/index.html`
-- `clientes-service/coverage/index.html`
-- `facturas-service/coverage/index.html`
-
-### Ver Resumen de Cobertura
+### RSpec Directo (Granular)
 
 ```bash
-# Mostrar resumen en terminal
+cd clientes-service
+
+# Por capa
+bundle exec rspec spec/domain          # Domain layer
+bundle exec rspec spec/application     # Application layer
+bundle exec rspec spec/infrastructure  # Infrastructure layer
+bundle exec rspec spec/integration     # Integration tests
+
+# Archivo específico
+bundle exec rspec spec/domain/entities/cliente_spec.rb
+
+# Test específico por línea
+bundle exec rspec spec/domain/entities/cliente_spec.rb:25
+```
+
+---
+
+## 📊 Cobertura de Código
+
+### Generar Reportes
+
+```bash
+# Todos los servicios
+rake coverage
+
+# Ver resumen
 rake coverage_summary
 ```
 
-Ejemplo de output:
+**Output esperado:**
 ```
 auditoria-service            92.45% (123/133 líneas)
 clientes-service             88.67% (98/110 líneas)
 facturas-service             90.12% (104/115 líneas)
 ```
 
-### Limpiar Reportes
+**Reportes HTML:**
+- `auditoria-service/coverage/index.html`
+- `clientes-service/coverage/index.html`
+- `facturas-service/coverage/index.html`
 
-```bash
-# Eliminar todos los reportes de cobertura
-rake clean_coverage
-```
+### Objetivos de Cobertura
+
+| Nivel | Porcentaje |
+|-------|------------|
+| **Mínimo requerido** | 80% |
+| **Objetivo ideal** | 90%+ |
+
+SimpleCov mostrará un **warning** si la cobertura es menor al 80%.
+
+---
 
 ## 📁 Estructura de Tests
 
-Cada servicio sigue la estructura de **Clean Architecture**:
-
 ```
 servicio/spec/
-├── spec_helper.rb                    # Configuración de RSpec + SimpleCov
-├── integration_spec_helper.rb        # Helper para tests de integración
+├── spec_helper.rb                # Configuración RSpec + SimpleCov
+├── integration_spec_helper.rb    # Helper para tests de integración
 ├── domain/
-│   └── entities/                    # Tests de entidades de dominio
+│   └── entities/                # Tests de entidades (lógica pura)
 ├── application/
-│   └── use_cases/                   # Tests de casos de uso
+│   └── use_cases/               # Tests de casos de uso
 ├── infrastructure/
-│   └── persistence/                 # Tests de repositorios
-└── integration/                     # Tests de integración end-to-end
+│   └── persistence/             # Tests de repositorios
+└── integration/                 # Tests end-to-end
 ```
 
-### Domain Layer Tests
-- Validaciones de entidades
-- Lógica de negocio
-- Sin dependencias externas
+### Distribución por Capa
 
-### Application Layer Tests
-- Casos de uso (Use Cases)
-- Orquestación de lógica de negocio
-- Mocks de repositorios
+| Capa | Foco | % de Tests | Dependencias |
+|------|------|------------|--------------|
+| **Domain** | Validaciones, lógica de negocio | ~30% | Ninguna (tests puros) |
+| **Application** | Casos de uso, orquestación | ~40% | Mocks de repositorios |
+| **Infrastructure** | Repositorios, adaptadores | ~20% | Mocks de DB (ActiveRecord/Mongo) |
+| **Integration** | End-to-end, comunicación entre servicios | ~10% | WebMock para HTTP |
 
-### Infrastructure Layer Tests
-- Repositorios (persistencia)
-- Adaptadores externos
-- Mocks de ActiveRecord/MongoDB
-
-### Integration Tests
-- Tests end-to-end
-- Comunicación entre servicios
-- WebMock para servicios externos
-
-## 🎯 Objetivos de Cobertura
-
-- **Mínimo requerido**: 80%
-- **Objetivo ideal**: 90%+
-
-SimpleCov está configurado para mostrar un warning si la cobertura es menor al 80%.
+---
 
 ## 💡 Mejores Prácticas
 
-### 1. Nomenclatura de Tests
+### 1. Nomenclatura Consistente
 
 ```ruby
 RSpec.describe Domain::Entities::Cliente do
@@ -151,39 +139,41 @@ RSpec.describe Domain::Entities::Cliente do
       end
     end
 
-    context 'with invalid attributes' do
-      it 'raises ArgumentError when nombre is empty' do
-        # ...
+    context 'with invalid nombre' do
+      it 'raises ArgumentError' do
+        expect { described_class.new(nombre: '') }.to raise_error(ArgumentError)
       end
     end
   end
 end
 ```
 
-### 2. Uso de Mocks y Doubles
+### 2. Mocks y Doubles
 
 ```ruby
-# Double para objetos simples
+# Double para repositorios
 let(:repository) { instance_double(Domain::Repositories::ClienteRepository) }
 
-# Stubbing de métodos
+# Stubbing
 allow(repository).to receive(:find_by_id).and_return(cliente)
-expect(repository).to receive(:save).and_return(saved_cliente)
+
+# Expectation
+expect(repository).to receive(:save).with(cliente).and_return(true)
 ```
 
 ### 3. WebMock para Servicios Externos
 
 ```ruby
-# Mockear llamadas HTTP
+# Mockear llamadas HTTP entre servicios
 stub_request(:post, "http://localhost:4003/auditoria")
+  .with(body: hash_including(action: "CREATE"))
   .to_return(status: 201, body: { success: true }.to_json)
 ```
 
 ### 4. Database Cleaner
 
-Los tests de integración usan Database Cleaner para mantener la DB limpia:
-
 ```ruby
+# En spec_helper.rb
 config.around(:each) do |example|
   DatabaseCleaner.cleaning do
     example.run
@@ -191,17 +181,139 @@ config.around(:each) do |example|
 end
 ```
 
-## 🔧 Configuración de SimpleCov
+---
 
-SimpleCov está configurado en cada `spec_helper.rb`:
+## 📈 Estado Actual
+
+| Servicio | Tests Unitarios | Tests Integración | Total | Cobertura |
+|----------|-----------------|-------------------|-------|-----------|
+| **Auditoría** | 35 | 13 | 48 | ~92% ✅ |
+| **Clientes** | 28 | 8+ | 36+ | ~88% ✅ |
+| **Facturas** | 27 | 9+ | 36+ | ~90% ✅ |
+
+---
+
+## 🐛 Troubleshooting
+
+### Problema: SimpleCov no genera reportes
+
+```bash
+# Verificar instalación
+bundle install
+
+# Asegurarse que spec_helper.rb carga SimpleCov PRIMERO
+# (antes de require de la aplicación)
+```
+
+### Problema: Tests fallan por base de datos
+
+```bash
+# Ejecutar migraciones en ambiente de test
+cd clientes-service
+bundle exec rake db:migrate RACK_ENV=test
+
+cd ../facturas-service
+bundle exec rake db:migrate RACK_ENV=test
+```
+
+### Problema: WebMock bloquea conexiones localhost
+
+```bash
+# En spec_helper.rb
+WebMock.disable_net_connect!(allow_localhost: true)
+```
+
+### Problema: MongoDB no conecta en tests
+
+```bash
+# Verificar que MongoDB esté corriendo
+docker-compose up -d mongodb
+
+# O iniciarlo localmente
+mongod --dbpath ./data/db
+```
+
+---
+
+## 📖 Guías Rápidas
+
+### Escribir Test de Dominio
 
 ```ruby
-SimpleCov.start do
-  add_filter '/spec/'        # Excluir archivos de tests
-  add_filter '/config/'      # Excluir configuración
-  add_filter '/db/'          # Excluir migraciones
+# spec/domain/entities/cliente_spec.rb
+require 'spec_helper'
 
-  # Grupos para reportes
+RSpec.describe Domain::Entities::Cliente do
+  describe '#valid?' do
+    it 'returns true with valid attributes' do
+      cliente = described_class.new(
+        nombre: 'Test S.A.',
+        identificacion: '900123456',
+        correo: 'test@example.com'
+      )
+      expect(cliente).to be_valid
+    end
+  end
+end
+```
+
+### Escribir Test de Use Case
+
+```ruby
+# spec/application/use_cases/create_cliente_spec.rb
+require 'spec_helper'
+
+RSpec.describe Application::UseCases::CreateCliente do
+  let(:repository) { instance_double(Domain::Repositories::ClienteRepository) }
+  let(:use_case) { described_class.new(cliente_repository: repository) }
+
+  it 'creates cliente successfully' do
+    allow(repository).to receive(:save).and_return(cliente)
+
+    result = use_case.execute(nombre: 'Test', identificacion: '123')
+
+    expect(result.nombre).to eq('Test')
+  end
+end
+```
+
+### Escribir Test de Integración
+
+```ruby
+# spec/integration/clientes_api_spec.rb
+require 'integration_spec_helper'
+
+RSpec.describe 'Clientes API', type: :request do
+  it 'creates a new cliente' do
+    data = {
+      nombre: 'Test S.A.',
+      identificacion: '900123456',
+      correo: 'test@example.com'
+    }
+
+    post '/clientes', data.to_json, { 'CONTENT_TYPE' => 'application/json' }
+
+    expect(last_response.status).to eq(201)
+    json = JSON.parse(last_response.body)
+    expect(json['success']).to be true
+    expect(json['data']['nombre']).to eq('Test S.A.')
+  end
+end
+```
+
+---
+
+## 🔧 Configuración de SimpleCov
+
+```ruby
+# spec_helper.rb (en cada servicio)
+require 'simplecov'
+
+SimpleCov.start do
+  add_filter '/spec/'
+  add_filter '/config/'
+  add_filter '/db/'
+
   add_group 'Domain', 'app/domain'
   add_group 'Application', 'app/application'
   add_group 'Infrastructure', 'app/infrastructure'
@@ -212,71 +324,26 @@ SimpleCov.start do
 end
 ```
 
+---
+
 ## 🚀 Comandos Útiles
 
 ```bash
-# Ver todas las tareas disponibles
+# Ver tareas disponibles
 rake help
 
-# Ejecutar tests y ver cobertura
+# Tests + cobertura en un comando
 rake test && rake coverage_summary
 
-# Solo tests unitarios de un servicio
-rake clientes:test_unit
-
-# Limpiar y regenerar cobertura
-rake clean_coverage && rake coverage
-
-# Tests con salida detallada
-cd auditoria-service
-bundle exec rspec --format documentation --color
-```
-
-## 📈 Métricas de Testing
-
-### Estado Actual
-
-| Servicio | Tests Unitarios | Tests Integración | Total Tests | Cobertura |
-|----------|----------------|-------------------|-------------|-----------|
-| Auditoría | 35 | 13 | 48 | ~92% |
-| Clientes | 28 | 8+ | 36+ | ~88% |
-| Facturas | 27 | 9+ | 36+ | ~90% |
-
-### Distribución por Capa
-
-- **Domain**: ~30% de los tests
-- **Application**: ~40% de los tests
-- **Infrastructure**: ~20% de los tests
-- **Integration**: ~10% de los tests
-
-## 🐛 Troubleshooting
-
-### SimpleCov no genera reportes
-
-```bash
-# Asegúrate de que SimpleCov esté en el Gemfile
-bundle install
-
-# Verifica que spec_helper.rb carga SimpleCov ANTES de la aplicación
-```
-
-### Tests fallan por base de datos
-
-```bash
-# Ejecutar migraciones
+# Tests con output detallado
 cd clientes-service
-bundle exec rake db:migrate RACK_ENV=test
+bundle exec rspec --format documentation --color
 
-cd ../facturas-service
-bundle exec rake db:migrate RACK_ENV=test
+# Limpiar y regenerar todo
+rake clean_coverage && rake test && rake coverage
 ```
 
-### WebMock bloquea conexiones reales
-
-```bash
-# En spec_helper, ajusta la configuración:
-WebMock.disable_net_connect!(allow_localhost: true)
-```
+---
 
 ## 📚 Referencias
 
@@ -285,58 +352,6 @@ WebMock.disable_net_connect!(allow_localhost: true)
 - [WebMock Documentation](https://github.com/bblimke/webmock)
 - [Database Cleaner](https://github.com/DatabaseCleaner/database_cleaner)
 
-## 🎓 Guías de Testing
-
-### Escribir un Test de Dominio
-
-```ruby
-# spec/domain/entities/mi_entidad_spec.rb
-require 'spec_helper'
-
-RSpec.describe Domain::Entities::MiEntidad do
-  describe '#initialize' do
-    it 'creates entity with valid attributes' do
-      entity = described_class.new(nombre: 'Test')
-      expect(entity.nombre).to eq('Test')
-    end
-  end
-end
-```
-
-### Escribir un Test de Use Case
-
-```ruby
-# spec/application/use_cases/mi_use_case_spec.rb
-require 'spec_helper'
-
-RSpec.describe Application::UseCases::MiUseCase do
-  let(:repository) { instance_double(Domain::Repositories::MiRepository) }
-  let(:use_case) { described_class.new(repository: repository) }
-
-  it 'executes successfully' do
-    allow(repository).to receive(:save).and_return(result)
-    expect(use_case.execute(params)).to eq(result)
-  end
-end
-```
-
-### Escribir un Test de Integración
-
-```ruby
-# spec/integration/mi_integracion_spec.rb
-require 'integration_spec_helper'
-
-RSpec.describe 'Mi API', type: :request do
-  it 'creates resource successfully' do
-    post '/recursos', data.to_json, { 'CONTENT_TYPE' => 'application/json' }
-
-    expect(last_response.status).to eq(201)
-    json = JSON.parse(last_response.body)
-    expect(json['success']).to be true
-  end
-end
-```
-
 ---
 
-**Última actualización**: 2025-11-13
+**📌 Nota:** Para ver ejemplos completos de tests, explorar las carpetas `spec/` de cada servicio.
