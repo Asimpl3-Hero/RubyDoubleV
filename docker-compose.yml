@@ -59,6 +59,9 @@ services:
       - DATABASE_URL=${CLIENTES_DATABASE_URL:-sqlite3:db/clientes.sqlite3}
       - AUDITORIA_SERVICE_URL=${AUDITORIA_SERVICE_URL:-http://auditoria-service:${AUDITORIA_PORT:-4003}}
       - RACK_ENV=${RACK_ENV:-development}
+      # JWT Configuration
+      - SERVICE_NAME=clientes-service
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       auditoria-service:
         condition: service_started
@@ -88,6 +91,9 @@ services:
       - CLIENTES_SERVICE_URL=${CLIENTES_SERVICE_URL:-http://clientes-service:${CLIENTES_PORT:-4001}}
       - AUDITORIA_SERVICE_URL=${AUDITORIA_SERVICE_URL:-http://auditoria-service:${AUDITORIA_PORT:-4003}}
       - RACK_ENV=${RACK_ENV:-development}
+      # JWT Configuration
+      - SERVICE_NAME=facturas-service
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       clientes-service:
         condition: service_started

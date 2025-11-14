@@ -1,6 +1,6 @@
 # Domain Service - Validates if a cliente exists in the Clientes microservice
 
-require 'httparty'
+require_relative '../../../../shared/authenticated_http_client'
 
 module Domain
   module Services
@@ -10,7 +10,7 @@ module Domain
       end
 
       def cliente_exists?(cliente_id)
-        response = HTTParty.get(
+        response = AuthenticatedHttpClient::Client.get(
           "#{@clientes_service_url}/clientes/#{cliente_id}",
           timeout: 5
         )
@@ -22,7 +22,7 @@ module Domain
       end
 
       def get_cliente(cliente_id)
-        response = HTTParty.get(
+        response = AuthenticatedHttpClient::Client.get(
           "#{@clientes_service_url}/clientes/#{cliente_id}",
           timeout: 5
         )

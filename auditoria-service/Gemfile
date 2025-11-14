@@ -10,6 +10,9 @@ gem 'puma', '~> 6.0'
 # NoSQL Database
 gem 'mongo', '~> 2.19'
 
+# JWT for service-to-service authentication
+gem 'jwt', '~> 2.7'
+
 # JSON
 gem 'json', '~> 2.6'
 
