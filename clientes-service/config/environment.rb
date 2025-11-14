@@ -15,7 +15,7 @@ env = ENV['RACK_ENV'] || 'development'
 ActiveRecord::Base.establish_connection(db_config[env])
 
 # Load models
-require_relative '../app/models/cliente_model'
+require_relative '../app/infrastructure/persistence/cliente_model'
 
 # Load domain, application and infrastructure layers
 Dir[File.expand_path('../app/**/*.rb', __dir__)].each { |file| require file }
