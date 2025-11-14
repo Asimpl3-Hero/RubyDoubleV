@@ -127,7 +127,10 @@ class AuditoriaController < Sinatra::Base
   # OpenAPI specification endpoint
   get '/api-docs' do
     content_type 'application/yaml'
-    openapi_path = File.join(settings.root, 'public', 'openapi.yaml')
+
+    # Find app root by looking for config.ru
+    app_root = File.expand_path('../../..', __dir__)
+    openapi_path = File.join(app_root, 'public', 'openapi.yaml')
 
     unless File.exist?(openapi_path)
       halt 404, { error: "OpenAPI spec not found at #{openapi_path}" }.to_json

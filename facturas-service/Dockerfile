@@ -22,7 +22,6 @@ COPY Gemfile Gemfile.lock* ./
 # Install bundler and gems
 RUN gem install bundler -v '~> 2.4' && \
     bundle config set --local deployment 'false' && \
-    bundle config set --local without 'test' && \
     bundle install --jobs 4 --retry 3
 
 # Copy application code
