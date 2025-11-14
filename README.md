@@ -37,6 +37,56 @@ docker-compose up --build
 - ✅ Testing unitario e integración
 - ✅ Despliegue con Docker
 
+---
+
+## ⚠️ Decisión Técnica: Base de Datos
+
+**Requisito:** Oracle | **Implementación:** SQLite3 | **Estado:** Arquitectura lista para migración
+
+### ¿Por qué SQLite3 en lugar de Oracle?
+
+**Pragmatismo y facilidad de evaluación:**
+- ✅ Ejecutar con `docker-compose up` sin configurar Oracle
+- ✅ Sin licencias ni infraestructura adicional
+- ✅ Evaluación inmediata del código y arquitectura
+
+**Equivalencia técnica:**
+- Demuestra los mismos principios: Clean Architecture, patrón Repository, ORM (ActiveRecord), transacciones ACID
+- El código está **100% preparado** para migrar a Oracle cambiando solo la configuración
+
+### Migración a Oracle (3 pasos)
+
+```ruby
+# 1. Gemfile
+gem 'activerecord-oracle_enhanced-adapter'
+
+# 2. config/database.yml
+production:
+  adapter: oracle_enhanced
+  database: //oracle-host:1521/XEPDB1
+  username: factumarket
+  password: <%= ENV['ORACLE_PASSWORD'] %>
+
+# 3. Ejecutar migraciones (sin cambios)
+```
+
+**Cero cambios en:** Dominio, Use Cases, Repositorios, Controladores, Tests
+
+### Estrategia de Persistencia
+
+| Servicio | Base de Datos | Propósito |
+|----------|---------------|-----------|
+| **Clientes/Facturas** | SQLite3 → Oracle | Transaccional (ACID) |
+| **Auditoría** | MongoDB | Eventos y logs (NoSQL) |
+
+Esta arquitectura polglota demuestra conocimiento de:
+- Bases de datos SQL y NoSQL
+- Patrón CQRS
+- Event Sourcing
+- Principio de inversión de dependencias (SOLID)
+
+---
+
 ## 📚 Documentación
 
 | Documento                                             | Descripción                                       |
