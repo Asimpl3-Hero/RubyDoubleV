@@ -1,3 +1,18 @@
+# SimpleCov must be loaded before application code
+require 'simplecov'
+SimpleCov.start do
+  add_filter '/spec/'
+  add_filter '/config/'
+  add_filter '/db/'
+  add_group 'Domain', 'app/domain'
+  add_group 'Application', 'app/application'
+  add_group 'Infrastructure', 'app/infrastructure'
+  add_group 'Controllers', 'app/controllers'
+
+  track_files 'app/**/*.rb'
+  minimum_coverage 80
+end
+
 require 'bundler/setup'
 Bundler.require(:test)
 
