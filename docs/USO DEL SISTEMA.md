@@ -1,30 +1,131 @@
-# Ejemplos de Uso del Sistema FactuMarket
+# 📘 Guía de Uso - FactuMarket
 
-Este documento contiene ejemplos prácticos de uso de los 3 microservicios.
+> Guía completa para instalar, configurar y usar el sistema de facturación electrónica.
 
-## Flujo Completo: Crear Cliente y Factura
+---
 
-### Paso 1: Iniciar los servicios
+## 📋 Tabla de Contenidos
+
+- [Instalación y Configuración](#-instalación-y-configuración)
+- [Acceso a los Servicios](#-acceso-a-los-servicios)
+- [Flujo Completo: Crear Cliente y Factura](#-flujo-completo-crear-cliente-y-factura)
+- [Ejemplos de API por Servicio](#-ejemplos-de-api-por-servicio)
+- [Casos de Error Comunes](#-casos-de-error-comunes)
+- [Testing Automatizado](#-testing-automatizado)
+
+---
+
+## 🚀 Instalación y Configuración
+
+### Opción 1: Docker Compose (Recomendado)
+
+**Requisitos:**
+- Docker >= 20.x
+- Docker Compose >= 2.x
+
+**Pasos de instalación:**
 
 ```bash
-# Con Docker
-docker-compose up
+# 1. Clonar el repositorio
+git clone <repository-url>
+cd RubyDoubleV
 
-# O manualmente (3 terminales)
-cd auditoria-service && bundle exec puma config.ru -p 4003
-cd clientes-service && bundle exec puma config.ru -p 4001
-cd facturas-service && bundle exec puma config.ru -p 4002
+# 2. Configurar variables de entorno
+cp .env.example .env
+
+# 3. Iniciar todos los servicios
+docker-compose up --build
 ```
 
-### Paso 2: Verificar que los servicios están activos
+**¿Qué hace Docker Compose?**
+
+```mermaid
+graph LR
+    DC[docker-compose up] --> M[MongoDB Container]
+    DC --> A[Auditoría Service]
+    DC --> C[Clientes Service]
+    DC --> F[Facturas Service]
+
+    A --> M
+    C --> SQL1[(SQLite DB)]
+    F --> SQL2[(SQLite DB)]
+```
+
+Docker Compose orquesta:
+- ✅ **4 contenedores**: MongoDB + 3 microservicios
+- ✅ **Red interna**: `factumarket-network` para comunicación
+- ✅ **Volúmenes**: Persistencia de MongoDB
+- ✅ **Puertos expuestos**: 4001, 4002, 4003, 27017
+
+### Opción 2: Desarrollo Local (Sin Docker)
+
+**Requisitos:**
+- Ruby >= 3.2
+- MongoDB >= 5.0
+- SQLite3
 
 ```bash
+# Terminal 1: MongoDB
+mongod --dbpath ./data/db
+
+# Terminal 2: Auditoría Service
+cd auditoria-service
+cp .env.example .env
+bundle install
+bundle exec puma config.ru -p 4003
+
+# Terminal 3: Clientes Service
+cd clientes-service
+cp .env.example .env
+bundle install
+bundle exec rake db:migrate
+bundle exec puma config.ru -p 4001
+
+# Terminal 4: Facturas Service
+cd facturas-service
+cp .env.example .env
+bundle install
+bundle exec rake db:migrate
+bundle exec puma config.ru -p 4002
+```
+
+---
+
+## 🌐 Acceso a los Servicios
+
+### Localhost (Desarrollo)
+
+| Servicio | URL Base | Swagger UI | Health Check |
+|----------|----------|------------|--------------|
+| **Clientes** | http://localhost:4001 | [/docs](http://localhost:4001/docs) | [/health](http://localhost:4001/health) |
+| **Facturas** | http://localhost:4002 | [/docs](http://localhost:4002/docs) | [/health](http://localhost:4002/health) |
+| **Auditoría** | http://localhost:4003 | [/docs](http://localhost:4003/docs) | [/health](http://localhost:4003/health) |
+| **MongoDB** | localhost:27017 | - | - |
+
+### Producción (Dokploy)
+
+| Servicio | URL |
+|----------|-----|
+| **Clientes** | https://clientes-ruby-double-v.ondeploy.space |
+| **Facturas** | https://factura-ruby-double-v.ondeploy.space |
+| **Auditoría** | https://auditoria-ruby-double-v.ondeploy.space |
+
+### Verificar que todo funciona
+
+```bash
+# Health checks
 curl http://localhost:4001/health
 curl http://localhost:4002/health
 curl http://localhost:4003/health
+
+# Esperado: {"success":true,"service":"...-service","status":"running",...}
 ```
 
-### Paso 3: Crear un cliente
+---
+
+## 🔄 Flujo Completo: Crear Cliente y Factura
+
+### Paso 1️⃣: Crear un Cliente
 
 ```bash
 curl -X POST http://localhost:4001/clientes \
@@ -33,11 +134,13 @@ curl -X POST http://localhost:4001/clientes \
     "nombre": "Tienda El Ahorro S.A.S.",
     "identificacion": "900555123",
     "correo": "contacto@elahorro.com",
-    "direccion": "Carrera 7 #12-34, Bogotá, Colombia"
+    "direccion": "Carrera 7 #12-34, Bogotá"
   }'
 ```
 
-**Respuesta esperada:**
+<details>
+<summary>📄 Ver respuesta exitosa</summary>
+
 ```json
 {
   "success": true,
@@ -47,20 +150,14 @@ curl -X POST http://localhost:4001/clientes \
     "nombre": "Tienda El Ahorro S.A.S.",
     "identificacion": "900555123",
     "correo": "contacto@elahorro.com",
-    "direccion": "Carrera 7 #12-34, Bogotá, Colombia",
-    "created_at": "2025-01-13T15:30:00.000Z",
-    "updated_at": "2025-01-13T15:30:00.000Z"
+    "direccion": "Carrera 7 #12-34, Bogotá",
+    "created_at": "2025-01-13T15:30:00.000Z"
   }
 }
 ```
+</details>
 
-### Paso 4: Consultar el cliente creado
-
-```bash
-curl http://localhost:4001/clientes/1
-```
-
-### Paso 5: Crear una factura para el cliente
+### Paso 2️⃣: Crear una Factura
 
 ```bash
 curl -X POST http://localhost:4002/facturas \
@@ -71,28 +168,24 @@ curl -X POST http://localhost:4002/facturas \
     "monto": 2500000,
     "items": [
       {
-        "descripcion": "Laptop Dell Inspiron 15",
+        "descripcion": "Laptop Dell",
         "cantidad": 1,
         "precio_unitario": 1800000,
         "subtotal": 1800000
       },
       {
-        "descripcion": "Mouse Logitech",
+        "descripcion": "Mouse",
         "cantidad": 2,
         "precio_unitario": 50000,
         "subtotal": 100000
-      },
-      {
-        "descripcion": "Teclado Mecánico",
-        "cantidad": 1,
-        "precio_unitario": 600000,
-        "subtotal": 600000
       }
     ]
   }'
 ```
 
-**Respuesta esperada:**
+<details>
+<summary>📄 Ver respuesta exitosa</summary>
+
 ```json
 {
   "success": true,
@@ -103,15 +196,13 @@ curl -X POST http://localhost:4002/facturas \
     "numero_factura": "F-20250113-A1B2C3D4",
     "fecha_emision": "2025-01-13",
     "monto": 2500000.0,
-    "estado": "EMITIDA",
-    "items": [...],
-    "created_at": "2025-01-13T15:35:00.000Z",
-    "updated_at": "2025-01-13T15:35:00.000Z"
+    "estado": "EMITIDA"
   }
 }
 ```
+</details>
 
-### Paso 6: Consultar eventos de auditoría
+### Paso 3️⃣: Consultar Auditoría
 
 ```bash
 # Eventos del cliente
@@ -120,183 +211,114 @@ curl http://localhost:4003/auditoria/cliente/1
 # Eventos de la factura
 curl http://localhost:4003/auditoria/1
 
-# Todos los eventos recientes
+# Últimos eventos
 curl http://localhost:4003/auditoria?limit=10
 ```
 
-## Casos de Error
+---
 
-### Error: Cliente no existe al crear factura
+## 📚 Ejemplos de API por Servicio
 
+### 🟢 Clientes Service
+
+| Operación | Método | Endpoint | Descripción |
+|-----------|--------|----------|-------------|
+| Crear | POST | `/clientes` | Crea un nuevo cliente |
+| Obtener | GET | `/clientes/:id` | Consulta un cliente por ID |
+| Listar | GET | `/clientes` | Lista todos los clientes |
+
+**Ejemplo: Listar clientes**
 ```bash
-curl -X POST http://localhost:4002/facturas \
-  -H "Content-Type: application/json" \
-  -d '{
-    "cliente_id": 999,
-    "fecha_emision": "2025-01-13",
-    "monto": 1000000
-  }'
+curl http://localhost:4001/clientes
 ```
 
-**Respuesta:**
-```json
-{
-  "success": false,
-  "error": "Cliente con ID 999 no existe o no está disponible"
-}
-```
+### 🔵 Facturas Service
 
-### Error: Monto inválido
+| Operación | Método | Endpoint | Descripción |
+|-----------|--------|----------|-------------|
+| Crear | POST | `/facturas` | Crea una nueva factura |
+| Obtener | GET | `/facturas/:id` | Consulta una factura por ID |
+| Listar | GET | `/facturas` | Lista todas las facturas |
+| Filtrar | GET | `/facturas?fechaInicio=...&fechaFin=...` | Filtra por rango de fechas |
 
-```bash
-curl -X POST http://localhost:4002/facturas \
-  -H "Content-Type: application/json" \
-  -d '{
-    "cliente_id": 1,
-    "fecha_emision": "2025-01-13",
-    "monto": -100
-  }'
-```
-
-**Respuesta:**
-```json
-{
-  "success": false,
-  "error": "Monto debe ser mayor a 0"
-}
-```
-
-### Error: Cliente duplicado
-
-```bash
-curl -X POST http://localhost:4001/clientes \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nombre": "Otra Empresa",
-    "identificacion": "900555123",
-    "correo": "otro@example.com",
-    "direccion": "Calle 1"
-  }'
-```
-
-**Respuesta:**
-```json
-{
-  "success": false,
-  "error": "Cliente con identificación 900555123 ya existe"
-}
-```
-
-## Consultas Avanzadas
-
-### Listar facturas por rango de fechas
-
+**Ejemplo: Filtrar facturas por fecha**
 ```bash
 curl "http://localhost:4002/facturas?fechaInicio=2025-01-01&fechaFin=2025-01-31"
 ```
 
-### Filtrar eventos de auditoría por acción
+### 🟡 Auditoría Service
 
+| Operación | Método | Endpoint | Descripción |
+|-----------|--------|----------|-------------|
+| Por Factura | GET | `/auditoria/:factura_id` | Eventos de una factura |
+| Por Cliente | GET | `/auditoria/cliente/:cliente_id` | Eventos de un cliente |
+| Todos | GET | `/auditoria` | Todos los eventos (paginado) |
+| Filtrar | GET | `/auditoria?action=CREATE&status=SUCCESS` | Filtra por acción/estado |
+
+**Ejemplo: Solo errores**
 ```bash
-# Solo eventos de creación
-curl "http://localhost:4003/auditoria?action=CREATE&limit=20"
-
-# Solo errores
-curl "http://localhost:4003/auditoria?status=ERROR&limit=50"
+curl "http://localhost:4003/auditoria?status=ERROR&limit=20"
 ```
 
-## Testing con Script
+---
 
-Puedes usar este script bash para pruebas automatizadas:
+## ⚠️ Casos de Error Comunes
 
+| Escenario | HTTP Status | Error | Solución |
+|-----------|-------------|-------|----------|
+| Cliente inexistente | 422 | `Cliente con ID X no existe` | Verificar ID del cliente antes de crear factura |
+| Monto negativo | 400 | `Monto debe ser mayor a 0` | Validar monto > 0 |
+| Cliente duplicado | 400 | `Cliente con identificación X ya existe` | Usar identificación única |
+| Servicio no disponible | 503 | `timeout/connection unavailable` | Verificar que todos los servicios estén corriendo |
+
+**Ejemplo de error:**
+```bash
+curl -X POST http://localhost:4002/facturas -H "Content-Type: application/json" \
+  -d '{"cliente_id": 999, "fecha_emision": "2025-01-13", "monto": 1000000}'
+
+# Respuesta:
+# {"success": false, "error": "Cliente con ID 999 no existe o no está disponible"}
+```
+
+---
+
+## 🧪 Testing Automatizado
+
+**Opción 1: Script de prueba rápida**
+
+Crear archivo `test_api.sh`:
 ```bash
 #!/bin/bash
+# Health checks
+curl http://localhost:4001/health
+curl http://localhost:4002/health
+curl http://localhost:4003/health
 
-echo "=== Testing FactuMarket API ==="
-
-# Test 1: Health checks
-echo ""
-echo "1. Health Checks..."
-curl -s http://localhost:4001/health | jq .
-curl -s http://localhost:4002/health | jq .
-curl -s http://localhost:4003/health | jq .
-
-# Test 2: Crear cliente
-echo ""
-echo "2. Creando cliente..."
-CLIENTE_RESPONSE=$(curl -s -X POST http://localhost:4001/clientes \
+# Crear cliente y factura
+CLIENTE=$(curl -s -X POST http://localhost:4001/clientes \
   -H "Content-Type: application/json" \
-  -d '{
-    "nombre": "Test Cliente S.A.",
-    "identificacion": "900999888",
-    "correo": "test@example.com",
-    "direccion": "Calle Test 123"
-  }')
+  -d '{"nombre":"Test S.A.","identificacion":"900999888","correo":"test@example.com","direccion":"Calle 1"}')
 
-echo $CLIENTE_RESPONSE | jq .
-CLIENTE_ID=$(echo $CLIENTE_RESPONSE | jq -r '.data.id')
-echo "Cliente ID: $CLIENTE_ID"
+CLIENTE_ID=$(echo $CLIENTE | jq -r '.data.id')
 
-# Test 3: Crear factura
-echo ""
-echo "3. Creando factura..."
-FACTURA_RESPONSE=$(curl -s -X POST http://localhost:4002/facturas \
+curl -X POST http://localhost:4002/facturas \
   -H "Content-Type: application/json" \
-  -d "{
-    \"cliente_id\": $CLIENTE_ID,
-    \"fecha_emision\": \"2025-01-13\",
-    \"monto\": 1000000,
-    \"items\": []
-  }")
-
-echo $FACTURA_RESPONSE | jq .
-FACTURA_ID=$(echo $FACTURA_RESPONSE | jq -r '.data.id')
-echo "Factura ID: $FACTURA_ID"
-
-# Test 4: Consultar auditoría
-echo ""
-echo "4. Consultando eventos de auditoría..."
-sleep 1
-curl -s "http://localhost:4003/auditoria/$FACTURA_ID" | jq .
-
-echo ""
-echo "=== Testing completado ==="
+  -d "{\"cliente_id\":$CLIENTE_ID,\"fecha_emision\":\"2025-01-13\",\"monto\":1000000}"
 ```
 
-## Colección Postman
+**Opción 2: Tests con RSpec**
 
-También puedes importar esta colección en Postman:
+Ver [TESTING.md](TESTING.md) para la suite completa de pruebas unitarias e integración.
 
-```json
-{
-  "info": {
-    "name": "FactuMarket API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "Clientes",
-      "item": [
-        {
-          "name": "Crear Cliente",
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
-            "url": "http://localhost:4001/clientes",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Empresa XYZ\",\n  \"identificacion\": \"900123456\",\n  \"correo\": \"contacto@xyz.com\",\n  \"direccion\": \"Calle 1\"\n}"
-            }
-          }
-        }
-      ]
-    }
-  ]
-}
-```
+**Opción 3: Colección Postman**
 
-## Notas
+Importar colección desde: `postman/FactuMarket.postman_collection.json` (o crear una nueva con los endpoints documentados arriba)
 
-- Todos los servicios deben estar corriendo antes de ejecutar las pruebas
-- Los eventos de auditoría se registran de forma asíncrona
-- Si MongoDB no está disponible, los servicios seguirán funcionando pero sin auditoría
+---
+
+## 📌 Notas Importantes
+
+- ✅ Todos los servicios deben estar corriendo antes de ejecutar pruebas
+- ✅ Los eventos de auditoría se registran de forma **asíncrona** (no bloquean operaciones)
+- ✅ Si MongoDB no está disponible, los servicios seguirán funcionando pero **sin auditoría**
+- ✅ Usar Swagger UI (`/docs`) para probar endpoints de forma interactiva
