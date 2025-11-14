@@ -10,6 +10,8 @@ require_relative '../infrastructure/persistence/active_record_factura_repository
 class FacturasController < Sinatra::Base
   configure do
     set :show_exceptions, false
+    # Set app root to /app (Docker WORKDIR) by looking for config.ru
+    set :root, File.expand_path('../../..', __dir__)
     set :public_folder, File.join(settings.root, 'public')
     enable :static
   end
@@ -113,9 +115,8 @@ class FacturasController < Sinatra::Base
   get '/api-docs' do
     content_type 'application/yaml'
 
-    # Find app root by looking for config.ru
-    app_root = File.expand_path('../../..', __dir__)
-    openapi_path = File.join(app_root, 'public', 'openapi.yaml')
+    # Use settings.root which was configured in the configure block
+    openapi_path = File.join(settings.root, 'public', 'openapi.yaml')
 
     unless File.exist?(openapi_path)
       halt 404, { error: "OpenAPI spec not found at #{openapi_path}" }.to_json
