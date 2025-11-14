@@ -18,8 +18,8 @@ services:
   # Auditoría Service
   auditoria-service:
     build:
-      context: ./auditoria-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./auditoria-service/Dockerfile
     container_name: factumarket-auditoria
     restart: unless-stopped
     ports:
@@ -45,8 +45,8 @@ services:
   # Clientes Service
   clientes-service:
     build:
-      context: ./clientes-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./clientes-service/Dockerfile
     container_name: factumarket-clientes
     restart: unless-stopped
     ports:
@@ -67,6 +67,7 @@ services:
         condition: service_started
     volumes:
       - ./clientes-service:/app
+      - ./shared:/app/shared
     networks:
       - factumarket-network
     command: >
@@ -76,8 +77,8 @@ services:
   # Facturas Service
   facturas-service:
     build:
-      context: ./facturas-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./facturas-service/Dockerfile
     container_name: factumarket-facturas
     restart: unless-stopped
     ports:
@@ -101,6 +102,7 @@ services:
         condition: service_started
     volumes:
       - ./facturas-service:/app
+      - ./shared:/app/shared
     networks:
       - factumarket-network
     command: >
