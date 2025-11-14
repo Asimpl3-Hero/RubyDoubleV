@@ -24,11 +24,10 @@ services:
     restart: unless-stopped
     ports:
       - "4003:4003"
+    env_file:
+      - ./auditoria-service/.env
     environment:
-      - PORT=4003
       - MONGO_URL=mongodb:27017
-      - MONGO_DATABASE=auditoria_db
-      - RACK_ENV=development
     depends_on:
       - mongodb
     volumes:
@@ -46,11 +45,10 @@ services:
     restart: unless-stopped
     ports:
       - "4001:4001"
+    env_file:
+      - ./clientes-service/.env
     environment:
-      - PORT=4001
-      - DATABASE_URL=sqlite3:db/clientes.sqlite3
       - AUDITORIA_SERVICE_URL=http://auditoria-service:4003
-      - RACK_ENV=development
     depends_on:
       - auditoria-service
     volumes:
@@ -70,12 +68,11 @@ services:
     restart: unless-stopped
     ports:
       - "4002:4002"
+    env_file:
+      - ./facturas-service/.env
     environment:
-      - PORT=4002
-      - DATABASE_URL=sqlite3:db/facturas.sqlite3
       - CLIENTES_SERVICE_URL=http://clientes-service:4001
       - AUDITORIA_SERVICE_URL=http://auditoria-service:4003
-      - RACK_ENV=development
     depends_on:
       - clientes-service
       - auditoria-service
