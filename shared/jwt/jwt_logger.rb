@@ -96,10 +96,12 @@ module JwtLogger
         f.puts log_line
       end
 
-      # También imprimir a stdout para debugging
-      puts "[JWT-LOG] #{data[:message]}" if ENV['RACK_ENV'] == 'development'
+      # No imprimir a stdout para evitar contaminar respuestas HTTP
     rescue => e
-      puts "Error writing to JWT log: #{e.message}"
+      # Log errors silently to avoid contaminating HTTP responses
+      File.open('/tmp/jwt_logger_errors.log', 'a') do |f|
+        f.puts "[#{Time.now}] Error writing to JWT log: #{e.message}"
+      end
     end
   end
 end

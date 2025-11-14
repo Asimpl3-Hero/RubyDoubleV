@@ -1,5 +1,5 @@
 require_relative 'config/environment'
-require_relative './shared/jwt_validation_middleware'
+require_relative './shared/jwt/jwt_validation_middleware'
 require_relative 'app/interfaces/http/clientes_controller'
 
 # JWT validation middleware

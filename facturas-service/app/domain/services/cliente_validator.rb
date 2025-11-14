@@ -1,6 +1,6 @@
 # Domain Service - Validates if a cliente exists in the Clientes microservice
 
-require_relative '../../../shared/authenticated_http_client'
+require_relative '../../../shared/jwt/authenticated_http_client'
 
 module Domain
   module Services
