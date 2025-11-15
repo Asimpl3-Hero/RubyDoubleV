@@ -90,6 +90,9 @@ tags:
   - name: health
     description: Verificación de estado del servicio
 
+security:
+  - BearerAuth: []
+
 paths:
   /facturas:
     post:
@@ -484,6 +487,21 @@ paths:
                     example: "2025-01-13T12:00:00Z"
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Autenticación JWT requerida para todas las operaciones (excepto /health y /docs).
+
+        **Para obtener un token de prueba, usa:**
+        ```bash
+        TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzZXJ2aWNlX25hbWUiOiJ0ZXN0LWNsaWVudCIsImlhdCI6MTc2MzE4MDc4MiwiZXhwIjoxNzYzMTg0MzgyfQ.ggNaB3L8E-wUHS34rskyeQuD3N42DWiyjRz5CTCqQFY"
+        ```
+
+        Luego haz click en "Authorize" y pega el token.
+
   schemas:
     Factura:
       type: object
