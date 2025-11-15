@@ -8,6 +8,15 @@
 
 > Sistema de microservicios para facturación electrónica construido con Ruby, aplicando **Clean Architecture** y **patrón MVC**, con bases de datos SQLite (transaccional) y MongoDB (auditoría).
 
+> [!IMPORTANT] > **Nota sobre Base de Datos Transaccional:**
+> Este proyecto utiliza **SQLite3** en lugar de Oracle como base de datos relacional para los servicios de Clientes y Facturas. SQLite fue seleccionado por:
+>
+> - ✅ Facilidad de configuración y deployment (sin servidor adicional)
+> - ✅ Portabilidad total (archivo único)
+> - ✅ Ideal para demostración y pruebas técnicas
+> - ✅ Cumple con ACID y soporta todas las operaciones necesarias
+> - ⚠️ Inconvenientes técnicos con la conexión Oracle-Ruby en el entorno de desarrollo
+
 ## 🚀 Inicio Rápido
 
 ```bash
@@ -62,6 +71,60 @@ mongodb://admin:factumarket_secure_2025@localhost:27017/?authSource=admin
 - ✅ Bases de datos: SQLite + MongoDB
 - ✅ Testing unitario e integración
 - ✅ Despliegue con Docker
+
+---
+
+## 🔧 Microservicios
+
+El sistema está compuesto por tres microservicios independientes, cada uno con responsabilidades específicas:
+
+### 📋 Servicio de Clientes
+
+**Puerto:** 4001 | **Base de datos:** SQLite3 | **Arquitectura:** Clean Architecture
+
+Gestiona el ciclo completo de clientes del sistema (personas naturales y jurídicas).
+
+**Características:**
+
+- Registro y consulta de clientes
+- Validación de unicidad de identificación
+- Integración con servicio de auditoría
+
+📖 **[Ver documentación completa →](clientes-service/README.md)**
+
+---
+
+### 🧾 Servicio de Facturas
+
+**Puerto:** 4002 | **Base de datos:** SQLite3 | **Arquitectura:** Clean Architecture
+
+Maneja la creación y gestión de facturas electrónicas con validación de clientes.
+
+**Características:**
+
+- Generación automática de números de factura únicos
+- Validación de cliente existente (comunicación síncrona con Clientes Service)
+- Filtrado por rango de fechas
+- Validaciones de negocio (monto positivo, fecha válida)
+
+📖 **[Ver documentación completa →](facturas-service/README.md)**
+
+---
+
+### 📊 Servicio de Auditoría
+
+**Puerto:** 4003 | **Base de datos:** MongoDB | **Patrón:** MVC
+
+Registro centralizado de eventos de auditoría para todo el sistema.
+
+**Características:**
+
+- Registro de eventos de todos los microservicios (CREATE, READ, LIST, ERROR)
+- Consulta de eventos por entidad, acción o estado
+- Trazabilidad completa del sistema
+- Comunicación asíncrona (fire-and-forget)
+
+📖 **[Ver documentación completa →](auditoria-service/README.md)**
 
 ---
 
