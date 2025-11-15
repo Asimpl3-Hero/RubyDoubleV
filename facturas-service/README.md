@@ -180,9 +180,6 @@ cp .env.example .env
 # CLIENTES_SERVICE_URL=http://localhost:4001
 # AUDITORIA_SERVICE_URL=http://localhost:4003
 
-# Ejecutar migraciones
-bundle exec rake db:migrate
-
 # Iniciar servidor
 bundle exec puma config.ru -p 4002
 ```

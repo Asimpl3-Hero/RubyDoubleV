@@ -208,12 +208,12 @@ bundle install
 ### Problema: Tests fallan por base de datos
 
 ```bash
-# Ejecutar migraciones en ambiente de test
+# Verificar que las bases de datos de test existen
 cd clientes-service
-bundle exec rake db:migrate RACK_ENV=test
+bundle exec rake db:test:prepare
 
 cd ../facturas-service
-bundle exec rake db:migrate RACK_ENV=test
+bundle exec rake db:test:prepare
 ```
 
 ### Problema: WebMock bloquea conexiones localhost

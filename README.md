@@ -6,7 +6,7 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 
-> Sistema de microservicios para facturación electrónica construido con Ruby, aplicando **Clean Architecture** y **patrón MVC**, con bases de datos Oracle/SQLite (transaccional) y MongoDB (auditoría).
+> Sistema de microservicios para facturación electrónica construido con Ruby, aplicando **Clean Architecture** y **patrón MVC**, con bases de datos SQLite (transaccional) y MongoDB (auditoría).
 
 ## 🚀 Inicio Rápido
 
@@ -59,53 +59,18 @@ mongodb://admin:factumarket_secure_2025@localhost:27017/?authSource=admin
 - ✅ Arquitectura de microservicios independientes
 - ✅ Clean Architecture + patrón MVC
 - ✅ API REST con documentación Swagger/OpenAPI 3.0
-- ✅ Bases de datos: SQLite/Oracle + MongoDB
+- ✅ Bases de datos: SQLite + MongoDB
 - ✅ Testing unitario e integración
 - ✅ Despliegue con Docker
 
 ---
 
-## ⚠️ Decisión Técnica: Base de Datos
+## 📊 Estrategia de Persistencia
 
-**Requisito:** Oracle | **Implementación:** SQLite3 | **Estado:** Arquitectura lista para migración
-
-### ¿Por qué SQLite3 en lugar de Oracle?
-
-**Pragmatismo y facilidad de evaluación:**
-
-- ✅ Ejecutar con `docker-compose up` sin configurar Oracle
-- ✅ Sin licencias ni infraestructura adicional
-- ✅ Evaluación inmediata del código y arquitectura
-
-**Equivalencia técnica:**
-
-- Demuestra los mismos principios: Clean Architecture, patrón Repository, ORM (ActiveRecord), transacciones ACID
-- El código está **100% preparado** para migrar a Oracle cambiando solo la configuración
-
-### Migración a Oracle (3 pasos)
-
-```ruby
-# 1. Gemfile
-gem 'activerecord-oracle_enhanced-adapter'
-
-# 2. config/database.yml
-production:
-  adapter: oracle_enhanced
-  database: //oracle-host:1521/XEPDB1
-  username: factumarket
-  password: <%= ENV['ORACLE_PASSWORD'] %>
-
-# 3. Ejecutar migraciones (sin cambios)
-```
-
-**Cero cambios en:** Dominio, Use Cases, Repositorios, Controladores, Tests
-
-### Estrategia de Persistencia
-
-| Servicio              | Base de Datos    | Propósito              |
-| --------------------- | ---------------- | ---------------------- |
-| **Clientes/Facturas** | SQLite3 → Oracle | Transaccional (ACID)   |
-| **Auditoría**         | MongoDB          | Eventos y logs (NoSQL) |
+| Servicio              | Base de Datos | Propósito              |
+| --------------------- | ------------- | ---------------------- |
+| **Clientes/Facturas** | SQLite        | Transaccional (ACID)   |
+| **Auditoría**         | MongoDB       | Eventos y logs (NoSQL) |
 
 Esta arquitectura polglota demuestra conocimiento de:
 
@@ -143,7 +108,7 @@ Esta arquitectura polglota demuestra conocimiento de:
 ## 🛠️ Stack Tecnológico
 
 - **Backend**: Ruby 3.2+ con Sinatra
-- **Bases de Datos**: SQLite/Oracle + MongoDB
+- **Bases de Datos**: SQLite + MongoDB
 - **Testing**: RSpec + WebMock
 - **Documentación**: OpenAPI 3.0 + Swagger UI
 - **Deployment**: Docker + Docker Compose

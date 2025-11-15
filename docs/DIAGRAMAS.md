@@ -28,7 +28,7 @@ graph TB
     end
 
     subgraph "Bases de Datos"
-        SQL[(SQLite/Oracle<br/>Transaccional)]
+        SQL[(SQLite<br/>Transaccional)]
         MONGO[(MongoDB<br/>Auditoría)]
     end
 

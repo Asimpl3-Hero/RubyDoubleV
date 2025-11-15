@@ -148,9 +148,6 @@ bundle install
 # Configurar variables de entorno
 cp .env.example .env
 
-# Ejecutar migraciones
-bundle exec rake db:migrate
-
 # Iniciar servidor
 bundle exec puma config.ru -p 4001
 ```

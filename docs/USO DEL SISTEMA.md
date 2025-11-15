@@ -81,14 +81,12 @@ bundle exec puma config.ru -p 4003
 cd clientes-service
 cp .env.example .env
 bundle install
-bundle exec rake db:migrate
 bundle exec puma config.ru -p 4001
 
 # Terminal 4: Facturas Service
 cd facturas-service
 cp .env.example .env
 bundle install
-bundle exec rake db:migrate
 bundle exec puma config.ru -p 4002
 ```
 

@@ -228,7 +228,7 @@ graph TD
 **Beneficios:**
 - ✅ Lógica de negocio independiente de frameworks
 - ✅ Tests unitarios sin dependencias externas
-- ✅ Fácil cambiar bases de datos (SQLite → Oracle) sin tocar Domain
+- ✅ Fácil cambiar implementaciones de bases de datos sin tocar Domain
 
 ---
 
@@ -274,11 +274,8 @@ sequenceDiagram
 
 | Base de Datos | Servicios | Propósito | Características |
 |---------------|-----------|-----------|-----------------|
-| **SQLite** | Clientes, Facturas | Datos transaccionales | ✅ ACID<br/>✅ Relaciones<br/>✅ Integridad referencial<br/>🔄 Migrable a Oracle |
+| **SQLite** | Clientes, Facturas | Datos transaccionales | ✅ ACID<br/>✅ Relaciones<br/>✅ Integridad referencial |
 | **MongoDB** | Auditoría | Event Store | ✅ Alta velocidad de escritura<br/>✅ Esquema flexible (JSON)<br/>✅ Consultas por fecha<br/>✅ Inmutabilidad |
-
-**Nota sobre Oracle:**
-La arquitectura está diseñada para migrar de SQLite a Oracle cambiando solo la configuración (`database.yml` + adapter), sin modificar código de dominio, casos de uso o repositorios.
 
 ---
 
@@ -290,7 +287,7 @@ La arquitectura está diseñada para migrar de SQLite a Oracle cambiando solo la
 | **Framework** | Sinatra | Web framework minimalista |
 | **Servidor** | Puma | HTTP server con concurrencia |
 | **ORM** | ActiveRecord | Abstracción de BD relacional |
-| **DB Relacional** | SQLite | Transacciones ACID (migrable a Oracle) |
+| **DB Relacional** | SQLite | Transacciones ACID |
 | **DB NoSQL** | MongoDB | Event Store para auditoría |
 | **HTTP Client** | HTTParty | Comunicación inter-servicios |
 | **Testing** | RSpec + WebMock | Unit & Integration tests |
