@@ -386,47 +386,7 @@ curl -X POST http://localhost:4002/facturas -H "Content-Type: application/json" 
 
 ## 🧪 Testing Automatizado
 
-### Opción 1: Script de Prueba Rápida
-
-Crear archivo `test_api.sh`:
-
-```bash
-#!/bin/bash
-echo "=== FactuMarket API Test ==="
-
-# Health checks
-echo "\n1. Health Checks..."
-curl -s http://localhost:4001/health | jq
-curl -s http://localhost:4002/health | jq
-curl -s http://localhost:4003/health | jq
-
-# Crear cliente
-echo "\n2. Creando cliente..."
-CLIENTE=$(curl -s -X POST http://localhost:4001/clientes \
-  -H "Content-Type: application/json" \
-  -d '{"nombre":"Test S.A.","identificacion":"900999888","correo":"test@example.com","direccion":"Calle 1"}')
-
-echo $CLIENTE | jq
-CLIENTE_ID=$(echo $CLIENTE | jq -r '.data.id')
-
-# Crear factura
-echo "\n3. Creando factura para cliente $CLIENTE_ID..."
-curl -s -X POST http://localhost:4002/facturas \
-  -H "Content-Type: application/json" \
-  -d "{\"cliente_id\":$CLIENTE_ID,\"fecha_emision\":\"2025-01-13\",\"monto\":1000000}" | jq
-
-# Consultar auditoría
-echo "\n4. Consultando eventos de auditoría..."
-curl -s "http://localhost:4003/auditoria?limit=5" | jq
-```
-
-Ejecutar:
-```bash
-chmod +x test_api.sh
-./test_api.sh
-```
-
-### Opción 2: Tests con RSpec
+### Opción 1: Tests con RSpec
 
 **Ejecutar tests por servicio:**
 
@@ -467,13 +427,13 @@ bundle exec rspec --format documentation
 
 Ver [TESTING.md](TESTING.md) para la suite completa de pruebas y cobertura.
 
-### Opción 3: Colección Postman
+### Opción 2: Colección Postman
 
 1. Descargar [Postman](https://www.postman.com/downloads/)
 2. Importar colección desde: `postman/FactuMarket.postman_collection.json` (si existe)
 3. O crear nueva colección con los endpoints documentados en este archivo
 
-### Opción 4: Swagger UI Interactivo
+### Opción 3: Swagger UI Interactivo
 
 La forma más fácil de probar la API es usando Swagger UI:
 

@@ -12,7 +12,7 @@ Esta carpeta contiene toda la documentación del proyecto.
 Incluye:
 - ✅ Inicio rápido en 3 comandos
 - ✅ Instrucciones paso a paso
-- ✅ 3 formas de probar el sistema (Swagger, Script, cURL)
+- ✅ 2 formas de probar el sistema (Swagger, cURL)
 - ✅ Arquitectura y diagramas
 - ✅ Troubleshooting
 - ✅ Ejemplos de uso

@@ -16,45 +16,39 @@
 ## 🏗️ Arquitectura General
 
 ```mermaid
-graph TB
-    subgraph "Cliente HTTP"
-        USER[🧑 Usuario/API Client]
-    end
+graph LR
+    Cliente[Cliente HTTP]
 
-    subgraph "Microservicios"
-        CS[🟢 Clientes Service<br/>:4001<br/>Clean Architecture]
-        FS[🔵 Facturas Service<br/>:4002<br/>Clean Architecture]
-        AS[🟡 Auditoría Service<br/>:4003<br/>Event Store]
-    end
+    Clientes[Clientes Service<br/>Puerto 4001]
+    Facturas[Facturas Service<br/>Puerto 4002]
+    Auditoria[Auditoría Service<br/>Puerto 4003]
 
-    subgraph "Bases de Datos"
-        SQL[(SQLite<br/>Transaccional)]
-        MONGO[(MongoDB<br/>Auditoría)]
-    end
+    DB1[(SQLite)]
+    DB2[(SQLite)]
+    DB3[(MongoDB)]
 
-    USER --> CS
-    USER --> FS
-    USER --> AS
+    Cliente --> Clientes
+    Cliente --> Facturas
+    Cliente --> Auditoria
 
-    FS -->|Valida Cliente| CS
-    CS -->|Eventos| AS
-    FS -->|Eventos| AS
+    Facturas -->|Valida| Clientes
+    Facturas -.->|Eventos| Auditoria
+    Clientes -.->|Eventos| Auditoria
 
-    CS --> SQL
-    FS --> SQL
-    AS --> MONGO
-
-    style CS fill:#51cf66,stroke:#2f9e44,color:#fff
-    style FS fill:#4dabf7,stroke:#1971c2,color:#fff
-    style AS fill:#ffd43b,stroke:#f59f00,color:#000
-    style USER fill:#868e96,stroke:#495057,color:#fff
+    Clientes --> DB1
+    Facturas --> DB2
+    Auditoria --> DB3
 ```
 
+**Leyenda:**
+- Línea sólida (→): Comunicación síncrona
+- Línea punteada (⋯→): Comunicación asíncrona
+
 **Características:**
-- ✅ 3 microservicios independientes
-- ✅ Cada servicio con su propia base de datos
-- ✅ Comunicación REST entre servicios
-- ✅ Auditoría asíncrona (no bloquea operaciones)
+- 3 microservicios independientes
+- Cada servicio con su propia base de datos
+- Facturas valida clientes antes de crear
+- Auditoría registra eventos sin bloquear operaciones
 
 ---
 
@@ -62,128 +56,138 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant Client as 🧑 Cliente
-    participant Facturas as 🔵 Facturas Service
-    participant Clientes as 🟢 Clientes Service
-    participant DB as 💾 SQLite
-    participant Auditoría as 🟡 Auditoría Service
-    participant Mongo as 🍃 MongoDB
+    participant C as Cliente
+    participant F as Facturas
+    participant CS as Clientes
+    participant A as Auditoría
 
-    Client->>Facturas: POST /facturas<br/>{cliente_id, monto, items}
+    C->>F: POST /facturas
+    Note over F: 1. Validar datos
 
-    Note over Facturas: 1️⃣ Validar datos básicos<br/>(monto > 0, fecha válida)
+    F->>CS: GET /clientes/1
+    CS-->>F: 200 OK
 
-    Facturas->>Clientes: 2️⃣ GET /clientes/:id
-    alt Cliente existe
-        Clientes-->>Facturas: ✅ 200 OK {cliente}
-    else Cliente no existe
-        Clientes-->>Facturas: ❌ 404 Not Found
-        Facturas-->>Client: 422 Error
-    end
+    Note over F: 2. Generar número<br/>3. Guardar en DB
 
-    Note over Facturas: 3️⃣ Aplicar reglas de negocio<br/>Generar número de factura
+    F->>A: POST /auditoria (async)
 
-    Facturas->>DB: 4️⃣ INSERT factura
-    DB-->>Facturas: ✅ Factura creada
+    F-->>C: 201 Created
 
-    Facturas->>Auditoría: 5️⃣ POST /auditoria<br/>(async, fire-and-forget)
-    Note right of Auditoría: No bloquea<br/>la respuesta
-    Auditoría->>Mongo: Registrar evento
-
-    Facturas-->>Client: ✅ 201 Created<br/>{factura}
+    Note over A: Registra evento<br/>(no bloquea respuesta)
 ```
 
+**Flujo simplificado:**
+
+1. **Validar datos**: Monto > 0, fecha válida, items completos
+2. **Verificar cliente**: Consulta síncrona al servicio de Clientes
+3. **Crear factura**: Generar número único y guardar en BD
+4. **Registrar evento**: Envío asíncrono a Auditoría (fire-and-forget)
+5. **Responder**: 201 Created con datos de la factura
+
 **Puntos clave:**
-1. Validación en capas: datos → cliente existe → reglas de negocio
-2. Comunicación síncrona para validar cliente (timeout 5s)
-3. Comunicación asíncrona para auditoría (no bloquea)
-4. Transacción en base de datos antes de responder
+- Validación síncrona del cliente (timeout 5s)
+- Auditoría asíncrona (no bloquea la respuesta)
+- Transacción en BD antes de responder al cliente
 
 ---
 
 ## 🎯 Clean Architecture
 
 ```mermaid
-graph TD
-    subgraph "🎯 Presentation Layer"
-        HTTP[HTTP Request]
-        CTRL[Controller<br/>app/controllers/]
-        JSON[JSON Response]
-    end
+graph TB
+    HTTP[HTTP Request]
 
-    subgraph "📋 Application Layer"
-        UC[Use Cases<br/>app/application/use_cases/]
-    end
+    Controller[Controller]
+    UseCase[Use Case]
+    Entity[Entity]
+    RepoInterface[Repository Interface]
+    RepoImpl[Repository Implementation]
+    DB[(Database)]
 
-    subgraph "🧠 Domain Layer"
-        ENT[Entities<br/>app/domain/entities/]
-        REPO_INT[Repository Interfaces<br/>app/domain/repositories/]
-    end
-
-    subgraph "🔌 Infrastructure Layer"
-        REPO_IMPL[Repository Implementation<br/>app/infrastructure/persistence/]
-        DB[(Database<br/>SQLite/MongoDB)]
-    end
-
-    HTTP --> CTRL
-    CTRL --> UC
-    UC --> ENT
-    UC --> REPO_INT
-    REPO_INT -.->|implements| REPO_IMPL
-    REPO_IMPL --> DB
-    CTRL --> JSON
-
-    style CTRL fill:#4dabf7,stroke:#1971c2,color:#fff
-    style UC fill:#ffd43b,stroke:#f59f00,color:#000
-    style ENT fill:#51cf66,stroke:#2f9e44,color:#fff
-    style REPO_IMPL fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    HTTP --> Controller
+    Controller --> UseCase
+    UseCase --> Entity
+    UseCase --> RepoInterface
+    RepoInterface -.->|implements| RepoImpl
+    RepoImpl --> DB
 ```
 
+**Capas del sistema (de afuera hacia adentro):**
+
+1. **Presentation** → Controllers (HTTP → JSON)
+2. **Application** → Use Cases (lógica de orquestación)
+3. **Domain** → Entities + Repository Interfaces (reglas de negocio)
+4. **Infrastructure** → Repository Implementations (acceso a BD)
+
 **Regla de dependencias:**
-- ⬇️ Presentation → Application → Domain
-- ⬆️ Domain NO depende de nada
-- 🔄 Infrastructure implementa interfaces del Domain
+- Las capas externas dependen de las internas
+- El Domain NO depende de nada
+- Infrastructure implementa interfaces del Domain
+
+**Ejemplo práctico:**
+```
+POST /facturas
+  → Controller recibe request
+  → Llama a Use Case "CrearFactura"
+  → Use Case valida con Entity "Factura"
+  → Use Case usa FacturaRepository (interfaz)
+  → FacturaRepositoryImpl guarda en SQLite
+  → Controller devuelve JSON
+```
 
 **Beneficios:**
-- ✅ Lógica de negocio independiente de frameworks
-- ✅ Fácil testing unitario (sin dependencias externas)
-- ✅ Cambiar BD o framework sin afectar lógica
+- Lógica de negocio independiente de frameworks
+- Testing fácil (mock de repositories)
+- Cambiar BD sin afectar lógica de negocio
 
 ---
 
 ## 🌐 Comunicación entre Servicios
 
+### Comunicación Síncrona
+
 ```mermaid
-graph LR
-    subgraph "Tipos de Comunicación"
-        SYNC[🔄 Síncrona<br/>Request-Response<br/>Timeout: 5s]
-        ASYNC[⚡ Asíncrona<br/>Fire-and-Forget<br/>Sin timeout]
-    end
-
-    subgraph "Ejemplos"
-        F[Facturas]
-        C[Clientes]
-        A[Auditoría]
-    end
-
-    F -->|GET /clientes/:id| C
-    C -.->|"200 OK {cliente}"| F
-
-    F -->|POST /auditoria| A
-
-    Note1[Bloquea hasta<br/>recibir respuesta]
-    Note2[No espera<br/>respuesta]
-
-    style SYNC fill:#4dabf7,stroke:#1971c2,color:#fff
-    style ASYNC fill:#51cf66,stroke:#2f9e44,color:#fff
-    style Note1 fill:#fff,stroke:#495057,color:#000
-    style Note2 fill:#fff,stroke:#495057,color:#000
+sequenceDiagram
+    Facturas->>Clientes: GET /clientes/1
+    Clientes-->>Facturas: 200 OK {cliente}
+    Note over Facturas: Espera respuesta<br/>Timeout: 5s
 ```
 
-| Tipo | Uso | Timeout | Bloquea | Manejo de Error |
-|------|-----|---------|---------|-----------------|
-| **Síncrona** | Validar cliente antes de crear factura | 5s | ✅ Sí | Devuelve error al cliente |
-| **Asíncrona** | Registrar evento de auditoría | - | ❌ No | Continúa aunque falle |
+**Cuándo usar:**
+- Cuando necesitas el resultado para continuar
+- Ejemplo: Validar que un cliente existe antes de crear factura
+
+**Características:**
+- Bloquea hasta recibir respuesta
+- Timeout de 5 segundos
+- Si falla, devuelve error al usuario
+
+### Comunicación Asíncrona
+
+```mermaid
+sequenceDiagram
+    Facturas->>Auditoría: POST /auditoria
+    Note over Facturas: No espera respuesta<br/>Continúa inmediatamente
+    Note over Auditoría: Procesa cuando puede
+```
+
+**Cuándo usar:**
+- Cuando no necesitas el resultado inmediatamente
+- Ejemplo: Registrar eventos de auditoría
+
+**Características:**
+- No bloquea la operación principal
+- Fire-and-forget (dispara y olvida)
+- Si falla, no afecta al usuario
+
+### Comparación
+
+| Aspecto | Síncrona | Asíncrona |
+|---------|----------|-----------|
+| **Bloquea** | Sí | No |
+| **Timeout** | 5 segundos | N/A |
+| **Uso** | Validar cliente | Registrar eventos |
+| **Si falla** | Error al usuario | Continúa operación |
 
 ---
 

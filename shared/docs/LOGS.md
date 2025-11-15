@@ -139,20 +139,6 @@ puts JwtLogger.summary
 JwtLogger.clear_logs
 ```
 
-## Script de Prueba
-
-Ejecuta el script de simulación incluido:
-
-```bash
-bash test_jwt_logs.sh
-```
-
-Este script:
-1. ✅ Genera tokens JWT
-2. ✅ Hace requests a endpoints protegidos
-3. ✅ Simula comunicación inter-servicio
-4. ✅ Muestra resumen de logs
-
 ## Monitoreo en Producción
 
 En producción (Dokploy), los logs estarán en `/tmp/jwt_communication.log` dentro de cada contenedor.

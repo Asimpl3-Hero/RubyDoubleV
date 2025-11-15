@@ -116,7 +116,6 @@ SERVICE_NAME=<service-name>           # Único por servicio
 
 - [Guía JWT Completa](docs/README.md)
 - [Sistema de Logs](docs/LOGS.md)
-- Script de prueba: `../test_jwt_logs.sh`
 
 ---
 
