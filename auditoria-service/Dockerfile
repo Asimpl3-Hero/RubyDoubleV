@@ -29,9 +29,8 @@ COPY . .
 RUN if [ -d "/app/auditoria-service" ]; then \
       # Backup shared directory from repo root
       cp -r /app/shared /tmp/shared_backup && \
-      # Move service files to /app/ root
-      mv /app/auditoria-service/* /app/ 2>/dev/null || true && \
-      mv /app/auditoria-service/.??* /app/ 2>/dev/null || true && \
+      # Copy all files from service directory to /app/ (including hidden files)
+      cp -a /app/auditoria-service/. /app/ && \
       # Remove service directories
       rm -rf /app/facturas-service /app/clientes-service /app/auditoria-service && \
       # Restore shared directory from backup
@@ -39,11 +38,10 @@ RUN if [ -d "/app/auditoria-service" ]; then \
       mv /tmp/shared_backup /app/shared; \
     fi
 
-# Verify shared directory exists
-RUN ls -la /app/shared/ || echo "WARNING: shared directory not found!"
-
-# Verify openapi.yaml exists
-RUN ls -la /app/public/openapi.yaml || echo "WARNING: openapi.yaml not found!"
+# Verify critical files exist
+RUN ls -la /app/shared/ || echo "ERROR: shared directory not found!" && \
+    ls -la /app/public/openapi.yaml || echo "ERROR: openapi.yaml not found!" && \
+    echo "✓ Directory structure verified"
 
 # Expose port
 EXPOSE 4003
