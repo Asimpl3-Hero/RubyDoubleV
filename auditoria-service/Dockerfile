@@ -29,18 +29,15 @@ COPY . .
 RUN if [ -d "/app/auditoria-service" ]; then \
       # Backup shared directory from repo root
       cp -r /app/shared /tmp/shared_backup && \
-      # Copy service files to /app/ root (cp handles existing dirs better than mv)
-      cp -r /app/auditoria-service/* /app/ && \
-      cp -r /app/auditoria-service/.??* /app/ 2>/dev/null || true && \
-      # Remove service directories and shared from service if it exists
+      # Move service files to /app/ root
+      mv /app/auditoria-service/* /app/ 2>/dev/null || true && \
+      mv /app/auditoria-service/.??* /app/ 2>/dev/null || true && \
+      # Remove service directories
       rm -rf /app/facturas-service /app/clientes-service /app/auditoria-service && \
       # Restore shared directory from backup
       rm -rf /app/shared && \
       mv /tmp/shared_backup /app/shared; \
     fi
-
-# Create necessary directories (after moving service files)
-RUN mkdir -p /app/public
 
 # Verify shared directory exists
 RUN ls -la /app/shared/ || echo "WARNING: shared directory not found!"
