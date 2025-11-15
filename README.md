@@ -8,14 +8,14 @@
 
 > Sistema de microservicios para facturación electrónica construido con Ruby, aplicando **Clean Architecture** y **patrón MVC**, con bases de datos SQLite (transaccional) y MongoDB (auditoría).
 
-> [!IMPORTANT] > **Nota sobre Base de Datos Transaccional:**
+> [⚠️ !IMPORTANT] > **Nota sobre Base de Datos Transaccional:**
 > Este proyecto utiliza **SQLite3** en lugar de Oracle como base de datos relacional para los servicios de Clientes y Facturas. SQLite fue seleccionado por:
 >
 > - ✅ Facilidad de configuración y deployment (sin servidor adicional)
 > - ✅ Portabilidad total (archivo único)
 > - ✅ Ideal para demostración y pruebas técnicas
 > - ✅ Cumple con ACID y soporta todas las operaciones necesarias
-> - ⚠️ Inconvenientes técnicos con la conexión Oracle-Ruby en el entorno de desarrollo
+> - ⚠️ Inconvenientes técnicos con la conexión Oracle-Ruby en el entorno de desarrollo y producción.
 
 ## 🚀 Inicio Rápido
 
