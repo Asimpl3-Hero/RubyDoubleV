@@ -29,7 +29,14 @@ cp .env.example .env
 
 # Levantar servicios con Docker
 docker-compose up --build
+
+# Los servicios estarán disponibles en:
+# - http://localhost:4001/docs (Clientes)
+# - http://localhost:4002/docs (Facturas)
+# - http://localhost:4003/docs (Auditoría)
 ```
+
+> **📋 Para evaluadores:** Ver [INSTRUCCIONES_EVALUADORES.md](./docs/INSTRUCCIONES_EVALUADORES.md) para instrucciones detalladas de prueba.
 
 **🌐 Servicios en Producción:**
 
