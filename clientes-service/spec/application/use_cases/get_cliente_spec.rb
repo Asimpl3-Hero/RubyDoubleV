@@ -19,7 +19,6 @@ RSpec.describe Application::UseCases::GetCliente do
         )
 
         expect(repository).to receive(:find_by_id).with(1).and_return(cliente)
-        allow(HTTParty).to receive(:post).and_return(double(success?: true))
 
         result = use_case.execute(id: 1)
 
@@ -39,15 +38,14 @@ RSpec.describe Application::UseCases::GetCliente do
 
         allow(repository).to receive(:find_by_id).and_return(cliente)
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(
-            body: /READ/,
-            headers: { 'Content-Type' => 'application/json' }
-          )
-        )
-
         use_case.execute(id: 1)
+
+        # Verify audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('cliente')
+        expect(event[:action]).to eq('READ')
+        expect(event[:status]).to eq('SUCCESS')
       end
     end
 
@@ -63,19 +61,21 @@ RSpec.describe Application::UseCases::GetCliente do
       it 'registers an error audit event' do
         allow(repository).to receive(:find_by_id).and_return(nil)
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(body: /ERROR/)
-        )
-
         expect {
           use_case.execute(id: 999)
         }.to raise_error(StandardError)
+
+        # Verify error audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('cliente')
+        expect(event[:action]).to eq('READ')
+        expect(event[:status]).to eq('ERROR')
       end
     end
 
-    context 'when audit service fails' do
-      it 'continues execution and does not raise error' do
+    context 'when audit publisher is available' do
+      it 'publishes audit event successfully' do
         cliente = Domain::Entities::Cliente.new(
           id: 1,
           nombre: 'Empresa ABC S.A.',
@@ -85,12 +85,14 @@ RSpec.describe Application::UseCases::GetCliente do
         )
 
         allow(repository).to receive(:find_by_id).and_return(cliente)
-        allow(HTTParty).to receive(:post).and_raise(StandardError, 'Audit service down')
 
         expect {
           result = use_case.execute(id: 1)
           expect(result).to eq(cliente)
         }.not_to raise_error
+
+        # Verify audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
       end
     end
   end

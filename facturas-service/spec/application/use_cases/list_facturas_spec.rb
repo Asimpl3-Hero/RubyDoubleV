@@ -26,7 +26,6 @@ RSpec.describe Application::UseCases::ListFacturas do
         ]
 
         expect(repository).to receive(:find_all).and_return(facturas)
-        allow(HTTParty).to receive(:post).and_return(double(success?: true))
 
         result = use_case.execute
 
@@ -46,22 +45,20 @@ RSpec.describe Application::UseCases::ListFacturas do
 
         allow(repository).to receive(:find_all).and_return(facturas)
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(
-            body: /LIST/,
-            headers: { 'Content-Type' => 'application/json' }
-          )
-        )
-
         use_case.execute
+
+        # Verify audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('factura')
+        expect(event[:action]).to eq('LIST')
+        expect(event[:status]).to eq('SUCCESS')
       end
     end
 
     context 'when no facturas exist' do
       it 'returns empty array' do
         expect(repository).to receive(:find_all).and_return([])
-        allow(HTTParty).to receive(:post).and_return(double(success?: true))
 
         result = use_case.execute
 
@@ -74,28 +71,32 @@ RSpec.describe Application::UseCases::ListFacturas do
       it 'registers an error audit event and raises exception' do
         allow(repository).to receive(:find_all).and_raise(StandardError, 'Database connection failed')
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(body: /ERROR/)
-        )
-
         expect {
           use_case.execute
         }.to raise_error(StandardError, 'Database connection failed')
+
+        # Verify error audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('factura')
+        expect(event[:action]).to eq('LIST')
+        expect(event[:status]).to eq('ERROR')
       end
     end
 
-    context 'when audit service fails' do
-      it 'continues execution and does not raise error' do
+    context 'when audit publisher is available' do
+      it 'publishes audit event successfully' do
         facturas = []
 
         allow(repository).to receive(:find_all).and_return(facturas)
-        allow(HTTParty).to receive(:post).and_raise(StandardError, 'Audit service down')
 
         expect {
           result = use_case.execute
           expect(result).to eq(facturas)
         }.not_to raise_error
+
+        # Verify audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
       end
     end
   end

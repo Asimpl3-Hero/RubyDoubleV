@@ -1,6 +1,7 @@
 require_relative 'config/environment'
 require_relative '../shared/jwt/jwt_validation_middleware'
 require_relative '../shared/jwt/service_jwt'
+require_relative '../shared/messaging/rabbitmq_initializer'
 require_relative 'app/interfaces/http/facturas_controller'
 require 'rack/cors'
 

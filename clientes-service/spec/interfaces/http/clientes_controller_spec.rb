@@ -15,21 +15,6 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
       end
 
       it 'creates cliente and registers audit event' do
-        # Mock Auditoría service response
-        audit_stub = stub_request(:post, "#{auditoria_url}/auditoria")
-          .with(
-            body: hash_including(
-              entity_type: 'cliente',
-              action: 'CREATE',
-              status: 'SUCCESS'
-            )
-          )
-          .to_return(
-            status: 201,
-            body: { success: true, message: 'Evento registrado' }.to_json,
-            headers: { 'Content-Type' => 'application/json' }
-          )
-
         # Create cliente
         post '/clientes', cliente_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
@@ -43,28 +28,25 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
         expect(response_body[:data][:identificacion]).to eq('900123456')
         expect(response_body[:data][:id]).not_to be_nil
 
-        # Verify audit event was sent
-        expect(audit_stub).to have_been_requested.once
+        # Verify audit event was published to RabbitMQ mock
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('cliente')
+        expect(event[:action]).to eq('CREATE')
+        expect(event[:status]).to eq('SUCCESS')
       end
 
-      it 'sends correct audit payload to Auditoría service' do
-        audit_request = nil
-
-        stub_request(:post, "#{auditoria_url}/auditoria")
-          .to_return do |request|
-            audit_request = JSON.parse(request.body, symbolize_names: true)
-            { status: 201, body: { success: true }.to_json }
-          end
-
+      it 'sends correct audit payload to message queue' do
         post '/clientes', cliente_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-        expect(audit_request).not_to be_nil
-        expect(audit_request[:entity_type]).to eq('cliente')
-        expect(audit_request[:action]).to eq('CREATE')
-        expect(audit_request[:status]).to eq('SUCCESS')
-        expect(audit_request[:entity_id]).not_to be_nil
-        expect(audit_request[:details]).to be_a(String)
-        expect(audit_request[:details]).to include('Cliente creado')
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event).not_to be_nil
+        expect(event[:entity_type]).to eq('cliente')
+        expect(event[:action]).to eq('CREATE')
+        expect(event[:status]).to eq('SUCCESS')
+        expect(event[:entity_id]).not_to be_nil
+        expect(event[:details]).to be_a(String)
+        expect(event[:details]).to include('Cliente creado')
       end
     end
 
@@ -78,21 +60,17 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
         }
       end
 
-      it 'registers error event in Auditoría' do
-        audit_stub = stub_request(:post, "#{auditoria_url}/auditoria")
-          .with(
-            body: hash_including(
-              entity_type: 'cliente',
-              action: 'CREATE',
-              status: 'ERROR'
-            )
-          )
-          .to_return(status: 201, body: { success: true }.to_json)
-
+      it 'registers error event in message queue' do
         post '/clientes', invalid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
         expect(last_response.status).to eq(400)
-        expect(audit_stub).to have_been_requested.once
+
+        # Verify error event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('cliente')
+        expect(event[:action]).to eq('CREATE')
+        expect(event[:status]).to eq('ERROR')
       end
     end
 
@@ -106,14 +84,10 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
         }
       end
 
-      it 'still creates cliente even if audit fails' do
-        # Mock Auditoría service failure
-        stub_request(:post, "#{auditoria_url}/auditoria")
-          .to_timeout
-
+      it 'creates cliente and publishes to message queue' do
         post '/clientes', cliente_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
 
-        # Cliente should still be created
+        # Cliente should be created
         expect(last_response.status).to eq(201)
         response_body = JSON.parse(last_response.body, symbolize_names: true)
         expect(response_body[:success]).to be true
@@ -121,6 +95,9 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
         # Verify cliente exists in database
         cliente = ClienteModel.last
         expect(cliente.nombre).to eq('Empresa Test S.A.')
+
+        # Verify audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
       end
     end
   end
@@ -136,17 +113,6 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
     end
 
     it 'retrieves cliente and registers audit event' do
-      audit_stub = stub_request(:post, "#{auditoria_url}/auditoria")
-        .with(
-          body: hash_including(
-            entity_type: 'cliente',
-            action: 'READ',
-            status: 'SUCCESS',
-            entity_id: cliente.id
-          )
-        )
-        .to_return(status: 201, body: { success: true }.to_json)
-
       get "/clientes/#{cliente.id}"
 
       expect(last_response.status).to eq(200)
@@ -154,7 +120,14 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
 
       expect(response_body[:success]).to be true
       expect(response_body[:data][:nombre]).to eq('Empresa Consulta S.A.')
-      expect(audit_stub).to have_been_requested.once
+
+      # Verify audit event was published
+      expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+      event = Messaging::AuditPublisherMock.last_event
+      expect(event[:entity_type]).to eq('cliente')
+      expect(event[:action]).to eq('READ')
+      expect(event[:status]).to eq('SUCCESS')
+      expect(event[:entity_id]).to eq(cliente.id)
     end
   end
 
@@ -175,16 +148,6 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
     end
 
     it 'lists clientes and registers audit event' do
-      audit_stub = stub_request(:post, "#{auditoria_url}/auditoria")
-        .with(
-          body: hash_including(
-            entity_type: 'cliente',
-            action: 'LIST',
-            status: 'SUCCESS'
-          )
-        )
-        .to_return(status: 201, body: { success: true }.to_json)
-
       get '/clientes'
 
       expect(last_response.status).to eq(200)
@@ -193,7 +156,13 @@ RSpec.describe 'Integration: Clientes → Auditoría', type: :integration do
       expect(response_body[:success]).to be true
       expect(response_body[:data]).to be_an(Array)
       expect(response_body[:data].length).to eq(2)
-      expect(audit_stub).to have_been_requested.once
+
+      # Verify audit event was published
+      expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+      event = Messaging::AuditPublisherMock.last_event
+      expect(event[:entity_type]).to eq('cliente')
+      expect(event[:action]).to eq('LIST')
+      expect(event[:status]).to eq('SUCCESS')
     end
   end
 end

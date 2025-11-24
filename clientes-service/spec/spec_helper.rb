@@ -2,6 +2,13 @@
 ENV['RACK_ENV'] = 'test'
 ENV['JWT_SECRET_KEY'] = '160b6ba480729089b07d54020388926db99330c793e77fb6530262f973121077'
 
+# Load audit publisher mock FIRST - before any application code
+require_relative '../../shared/messaging/audit_publisher_mock'
+
+# Replace real publisher with mock - this MUST happen before loading use cases
+Messaging = Module.new unless defined?(Messaging)
+Messaging::AuditPublisher = Messaging::AuditPublisherMock
+
 # SimpleCov must be loaded before application code
 require 'simplecov'
 SimpleCov.start do
@@ -37,9 +44,13 @@ RSpec.configure do |config|
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
 
-  # Stub audit service calls for unit tests
+  # Stub audit publisher and HTTP calls for all tests
   config.before(:each) do
-    stub_request(:post, /localhost:4003\/auditoria/)
-      .to_return(status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' })
+    # Allow the real publisher to be called but don't actually connect to RabbitMQ
+    allow_any_instance_of(Bunny::Session).to receive(:start).and_return(true)
+    allow_any_instance_of(Bunny::Session).to receive(:create_channel).and_return(double('channel', prefetch: nil, queue: double('queue', publish: true)))
+
+    # Stub HTTParty calls for backward compatibility with old tests
+    allow(HTTParty).to receive(:post).and_return(double('response', success?: true, body: '{}'))
   end
 end

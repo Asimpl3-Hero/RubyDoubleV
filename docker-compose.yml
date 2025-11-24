@@ -15,6 +15,27 @@ services:
     networks:
       - factumarket-network
 
+  # RabbitMQ for async communication
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: factumarket-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-factumarket_rabbit_2025}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - factumarket-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Auditoría Service
   auditoria-service:
     build:
@@ -37,14 +58,48 @@ services:
       # JWT Configuration
       - SERVICE_NAME=auditoria-service
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # RabbitMQ Configuration
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://admin:factumarket_rabbit_2025@rabbitmq:5672}
     depends_on:
       - mongodb
+      - rabbitmq
     volumes:
       - ./auditoria-service:/app
       - ./shared:/app/shared
     networks:
       - factumarket-network
     command: bundle exec puma config.ru -p ${AUDITORIA_PORT:-4003} -e ${RACK_ENV:-development}
+
+  # Auditoría Consumer Worker (processes RabbitMQ messages)
+  auditoria-consumer:
+    build:
+      context: .
+      dockerfile: ./auditoria-service/Dockerfile
+    container_name: factumarket-auditoria-consumer
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - MONGO_URL=${MONGO_URL:-mongodb:27017}
+      - MONGO_DATABASE=${MONGO_DATABASE:-auditoria_db}
+      - MONGO_USERNAME=${MONGO_USERNAME:-admin}
+      - MONGO_PASSWORD=${MONGO_PASSWORD:-factumarket_secure_2025}
+      - RACK_ENV=${RACK_ENV:-development}
+      - SERVICE_NAME=auditoria-consumer
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://admin:factumarket_rabbit_2025@rabbitmq:5672}
+    depends_on:
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      auditoria-service:
+        condition: service_started
+    volumes:
+      - ./auditoria-service:/app
+      - ./shared:/app/shared
+    networks:
+      - factumarket-network
+    command: bundle exec ruby workers/audit_consumer.rb
 
   # Clientes Service
   clientes-service:
@@ -66,12 +121,18 @@ services:
       # JWT Configuration
       - SERVICE_NAME=clientes-service
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # RabbitMQ Configuration
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://admin:factumarket_rabbit_2025@rabbitmq:5672}
     depends_on:
+      rabbitmq:
+        condition: service_started
       auditoria-service:
         condition: service_started
     volumes:
       - ./clientes-service:/app
       - ./shared:/app/shared
+      - ./shared:/shared
+      - clientes_db:/app/db
     networks:
       - factumarket-network
     command: >
@@ -99,7 +160,11 @@ services:
       # JWT Configuration
       - SERVICE_NAME=facturas-service
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # RabbitMQ Configuration
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://admin:factumarket_rabbit_2025@rabbitmq:5672}
     depends_on:
+      rabbitmq:
+        condition: service_started
       clientes-service:
         condition: service_started
       auditoria-service:
@@ -107,6 +172,8 @@ services:
     volumes:
       - ./facturas-service:/app
       - ./shared:/app/shared
+      - ./shared:/shared
+      - facturas_db:/app/db
     networks:
       - factumarket-network
     command: >
@@ -119,3 +186,6 @@ networks:
 
 volumes:
   mongodb_data:
+  rabbitmq_data:
+  clientes_db:
+  facturas_db:

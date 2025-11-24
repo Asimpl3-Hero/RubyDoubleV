@@ -35,7 +35,6 @@ RSpec.describe Application::UseCases::CreateFactura do
 
         expect(cliente_validator).to receive(:cliente_exists?).with(10).and_return(true)
         expect(repository).to receive(:save).and_return(saved_factura)
-        allow(HTTParty).to receive(:post).and_return(double(success?: true))
 
         result = use_case.execute(
           cliente_id: 10,
@@ -63,7 +62,6 @@ RSpec.describe Application::UseCases::CreateFactura do
 
         allow(cliente_validator).to receive(:cliente_exists?).and_return(true)
         allow(repository).to receive(:save).and_return(saved_factura)
-        allow(HTTParty).to receive(:post).and_return(double(success?: true))
 
         result = use_case.execute(
           cliente_id: 10,
@@ -87,20 +85,18 @@ RSpec.describe Application::UseCases::CreateFactura do
         allow(cliente_validator).to receive(:cliente_exists?).and_return(true)
         allow(repository).to receive(:save).and_return(saved_factura)
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(
-            body: String,
-            headers: { 'Content-Type' => 'application/json' },
-            timeout: 2
-          )
-        )
-
         use_case.execute(
           cliente_id: 10,
           fecha_emision: Date.today,
           monto: 1500.50
         )
+
+        # Verify audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('factura')
+        expect(event[:action]).to eq('CREATE')
+        expect(event[:status]).to eq('SUCCESS')
       end
     end
 
@@ -120,11 +116,6 @@ RSpec.describe Application::UseCases::CreateFactura do
       it 'registers an error audit event' do
         allow(cliente_validator).to receive(:cliente_exists?).and_return(false)
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(body: /ERROR/)
-        )
-
         expect {
           use_case.execute(
             cliente_id: 999,
@@ -132,6 +123,13 @@ RSpec.describe Application::UseCases::CreateFactura do
             monto: 1000.0
           )
         }.to raise_error(StandardError)
+
+        # Verify error audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('factura')
+        expect(event[:action]).to eq('CREATE')
+        expect(event[:status]).to eq('ERROR')
       end
     end
 
@@ -166,11 +164,6 @@ RSpec.describe Application::UseCases::CreateFactura do
         allow(cliente_validator).to receive(:cliente_exists?).and_return(true)
         allow(repository).to receive(:save).and_raise(StandardError, 'Database error')
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(body: /ERROR/)
-        )
-
         expect {
           use_case.execute(
             cliente_id: 10,
@@ -178,11 +171,18 @@ RSpec.describe Application::UseCases::CreateFactura do
             monto: 1000.0
           )
         }.to raise_error(StandardError, 'Database error')
+
+        # Verify error audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('factura')
+        expect(event[:action]).to eq('CREATE')
+        expect(event[:status]).to eq('ERROR')
       end
     end
 
-    context 'when audit service fails' do
-      it 'continues execution and does not raise error' do
+    context 'when audit publisher is available' do
+      it 'publishes audit event successfully' do
         saved_factura = Domain::Entities::Factura.new(
           id: 1,
           cliente_id: 10,
@@ -193,7 +193,6 @@ RSpec.describe Application::UseCases::CreateFactura do
 
         allow(cliente_validator).to receive(:cliente_exists?).and_return(true)
         allow(repository).to receive(:save).and_return(saved_factura)
-        allow(HTTParty).to receive(:post).and_raise(StandardError, 'Audit service down')
 
         expect {
           result = use_case.execute(
@@ -203,6 +202,9 @@ RSpec.describe Application::UseCases::CreateFactura do
           )
           expect(result).to eq(saved_factura)
         }.not_to raise_error
+
+        # Verify audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
       end
     end
   end

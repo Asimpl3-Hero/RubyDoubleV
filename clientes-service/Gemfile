@@ -18,6 +18,9 @@ gem 'httparty', '~> 0.21'
 # JWT for service-to-service authentication
 gem 'jwt', '~> 2.7'
 
+# RabbitMQ for async messaging
+gem 'bunny', '~> 2.22'
+
 # JSON
 gem 'json', '~> 2.6'
 

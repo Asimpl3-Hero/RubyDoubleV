@@ -48,21 +48,19 @@ RSpec.describe Application::UseCases::CreateCliente do
         allow(repository).to receive(:find_by_identificacion).and_return(nil)
         allow(repository).to receive(:save).and_return(saved_cliente)
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(
-            body: String,
-            headers: { 'Content-Type' => 'application/json' },
-            timeout: 2
-          )
-        )
-
         use_case.execute(
           nombre: 'Empresa ABC S.A.',
           identificacion: '900123456',
           correo: 'contacto@empresaabc.com',
           direccion: 'Calle 123 #45-67'
         )
+
+        # Verify audit event was published to mock
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:entity_type]).to eq('cliente')
+        expect(event[:action]).to eq('CREATE')
+        expect(event[:status]).to eq('SUCCESS')
       end
     end
 
@@ -109,11 +107,6 @@ RSpec.describe Application::UseCases::CreateCliente do
         allow(repository).to receive(:find_by_identificacion).and_return(nil)
         allow(repository).to receive(:save).and_raise(StandardError, 'Database error')
 
-        expect(HTTParty).to receive(:post).with(
-          "#{auditoria_service_url}/auditoria",
-          hash_including(body: /ERROR/)
-        )
-
         expect {
           use_case.execute(
             nombre: 'Empresa ABC S.A.',
@@ -122,11 +115,16 @@ RSpec.describe Application::UseCases::CreateCliente do
             direccion: 'Calle 123'
           )
         }.to raise_error(StandardError, 'Database error')
+
+        # Verify error audit event was published
+        expect(Messaging::AuditPublisherMock.events_count).to eq(1)
+        event = Messaging::AuditPublisherMock.last_event
+        expect(event[:status]).to eq('ERROR')
       end
     end
 
-    context 'when audit service fails' do
-      it 'continues execution and does not raise error' do
+    context 'when audit publisher is available' do
+      it 'publishes audit event successfully' do
         saved_cliente = Domain::Entities::Cliente.new(
           id: 1,
           nombre: 'Empresa ABC S.A.',
@@ -137,7 +135,6 @@ RSpec.describe Application::UseCases::CreateCliente do
 
         allow(repository).to receive(:find_by_identificacion).and_return(nil)
         allow(repository).to receive(:save).and_return(saved_cliente)
-        allow(HTTParty).to receive(:post).and_raise(StandardError, 'Audit service down')
 
         # Should not raise error even if audit fails
         expect {

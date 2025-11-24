@@ -2,7 +2,7 @@
 
 require_relative '../../domain/entities/factura'
 require_relative '../../domain/services/cliente_validator'
-require 'httparty'
+require_relative '../../../../shared/messaging/audit_publisher' unless defined?(Messaging::AuditPublisher)
 require 'date'
 
 module Application
@@ -65,21 +65,14 @@ module Application
       private
 
       def register_audit_event(entity_type:, entity_id:, action:, details:, status:)
-        HTTParty.post(
-          "#{@auditoria_service_url}/auditoria",
-          body: {
-            entity_type: entity_type,
-            entity_id: entity_id,
-            action: action,
-            details: details,
-            status: status,
-            timestamp: Time.now.utc.iso8601
-          }.to_json,
-          headers: { 'Content-Type' => 'application/json' },
-          timeout: 2
+        # Async publish to RabbitMQ - non-blocking
+        Messaging::AuditPublisher.publish(
+          entity_type: entity_type,
+          entity_id: entity_id,
+          action: action,
+          details: details,
+          status: status
         )
-      rescue StandardError => e
-        puts "Warning: Failed to register audit event: #{e.message}"
       end
     end
   end
