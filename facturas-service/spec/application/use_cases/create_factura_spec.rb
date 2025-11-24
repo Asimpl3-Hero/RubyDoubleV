@@ -28,7 +28,8 @@ RSpec.describe Application::UseCases::CreateFactura do
           cliente_id: 10,
           numero_factura: 'F-20250113-ABC123',
           fecha_emision: Date.today,
-          monto: 1500.50,
+          subtotal: 1500.50,
+          iva_porcentaje: 19,
           items: [{ descripcion: 'Producto A', cantidad: 2, precio: 750.25 }]
         )
 
@@ -39,14 +40,16 @@ RSpec.describe Application::UseCases::CreateFactura do
         result = use_case.execute(
           cliente_id: 10,
           fecha_emision: Date.today,
-          monto: 1500.50,
+          monto: 1500.50,  # Using monto for backward compatibility
           items: [{ descripcion: 'Producto A', cantidad: 2, precio: 750.25 }]
         )
 
         expect(result).to eq(saved_factura)
         expect(result.id).to eq(1)
         expect(result.cliente_id).to eq(10)
-        expect(result.monto).to eq(1500.50)
+        expect(result.subtotal).to eq(1500.50)
+        expect(result.iva_valor).to eq(285.10)
+        expect(result.total).to eq(1785.60)
       end
 
       it 'parses date string to Date object' do
@@ -54,7 +57,8 @@ RSpec.describe Application::UseCases::CreateFactura do
           id: 1,
           cliente_id: 10,
           fecha_emision: Date.today,
-          monto: 1000.0
+          subtotal: 1000.0,
+          iva_porcentaje: 19
         )
 
         allow(cliente_validator).to receive(:cliente_exists?).and_return(true)
@@ -76,7 +80,8 @@ RSpec.describe Application::UseCases::CreateFactura do
           cliente_id: 10,
           numero_factura: 'F-20250113-ABC123',
           fecha_emision: Date.today,
-          monto: 1500.50
+          subtotal: 1500.50,
+          iva_porcentaje: 19
         )
 
         allow(cliente_validator).to receive(:cliente_exists?).and_return(true)
@@ -140,7 +145,7 @@ RSpec.describe Application::UseCases::CreateFactura do
             fecha_emision: Date.today,
             monto: 0
           )
-        }.to raise_error(ArgumentError, 'Monto debe ser mayor a 0')
+        }.to raise_error(ArgumentError, 'Subtotal debe ser mayor a 0')
       end
 
       it 'raises ArgumentError when fecha_emision is in the future' do
@@ -182,7 +187,8 @@ RSpec.describe Application::UseCases::CreateFactura do
           id: 1,
           cliente_id: 10,
           fecha_emision: Date.today,
-          monto: 1000.0
+          subtotal: 1000.0,
+          iva_porcentaje: 19
         )
 
         allow(cliente_validator).to receive(:cliente_exists?).and_return(true)

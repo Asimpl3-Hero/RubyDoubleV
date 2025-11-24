@@ -71,7 +71,10 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
         expect(response_body[:success]).to be true
         expect(response_body[:message]).to eq('Factura creada exitosamente')
         expect(response_body[:data][:cliente_id]).to eq(1)
-        expect(response_body[:data][:monto]).to eq(1500000.0)
+        expect(response_body[:data][:subtotal]).to eq(1500000.0)
+        expect(response_body[:data][:iva_porcentaje]).to eq(19.0)
+        expect(response_body[:data][:iva_valor]).to eq(285000.0)
+        expect(response_body[:data][:total]).to eq(1785000.0)
         expect(response_body[:data][:estado]).to eq('EMITIDA')
         expect(response_body[:data][:numero_factura]).to match(/^F-\d{8}-[A-F0-9]{8}$/)
         expect(response_body[:data][:items]).to be_an(Array)
@@ -232,7 +235,10 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
         cliente_id: 1,
         numero_factura: 'F-20250113-ABC12345',
         fecha_emision: Date.today,
-        monto: 1500000,
+        subtotal: 1500000,
+        iva_porcentaje: 19,
+        iva_valor: 285000,
+        total: 1785000,
         estado: 'EMITIDA',
         items: [{ descripcion: 'Test', cantidad: 1, precio_unitario: 1500000 }]
       )
@@ -267,21 +273,30 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
         cliente_id: 1,
         numero_factura: 'F-20250101-AAA11111',
         fecha_emision: Date.new(2025, 1, 5),
-        monto: 1000000,
+        subtotal: 1000000,
+        iva_porcentaje: 19,
+        iva_valor: 190000,
+        total: 1190000,
         estado: 'EMITIDA'
       )
       FacturaModel.create!(
         cliente_id: 1,
         numero_factura: 'F-20250115-BBB22222',
         fecha_emision: Date.new(2025, 1, 15),
-        monto: 2000000,
+        subtotal: 2000000,
+        iva_porcentaje: 19,
+        iva_valor: 380000,
+        total: 2380000,
         estado: 'EMITIDA'
       )
       FacturaModel.create!(
         cliente_id: 1,
         numero_factura: 'F-20250125-CCC33333',
         fecha_emision: Date.new(2025, 1, 25),
-        monto: 3000000,
+        subtotal: 3000000,
+        iva_porcentaje: 19,
+        iva_valor: 570000,
+        total: 3570000,
         estado: 'EMITIDA'
       )
     end
@@ -345,7 +360,8 @@ RSpec.describe 'Integration: Facturas → Clientes → Auditoría', type: :integ
         # Verify factura exists in database
         factura = FacturaModel.last
         expect(factura.cliente_id).to eq(1)
-        expect(factura.monto).to eq(1000000)
+        expect(factura.subtotal).to eq(1000000)
+        expect(factura.total).to eq(1190000)
       end
     end
 

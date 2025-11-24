@@ -21,16 +21,18 @@ info:
       -d '{
         "cliente_id": 1,
         "fecha_emision": "2025-01-13",
-        "monto": 1500000,
+        "subtotal": 1000000,
+        "iva_porcentaje": 19,
         "items": [
           {
             "descripcion": "Servicio de Consultoría",
             "cantidad": 10,
-            "precio_unitario": 150000
+            "precio_unitario": 100000
           }
         ]
       }'
     ```
+    (El sistema calculará automáticamente: iva_valor=190000, total=1190000)
 
     ### 2. Obtener una factura específica
     ```bash
@@ -56,8 +58,14 @@ info:
     Al crear una factura:
     - **cliente_id:** Requerido y debe existir en clientes-service
     - **fecha_emision:** Requerida, formato YYYY-MM-DD, no puede ser futura
-    - **monto:** Requerido, debe ser mayor a 0
+    - **subtotal:** Requerido, debe ser mayor a 0 (base gravable)
+    - **iva_porcentaje:** Opcional (default: 19), debe ser 0, 5 o 19
     - **items:** Opcional, puede estar vacío
+
+    ## Cálculo de IVA
+    El sistema calcula automáticamente:
+    - **iva_valor** = subtotal * (iva_porcentaje / 100)
+    - **total** = subtotal + iva_valor
 
     ## Estados de Factura
     - **EMITIDA:** Estado inicial (por defecto)
@@ -170,7 +178,7 @@ paths:
               required:
                 - cliente_id
                 - fecha_emision
-                - monto
+                - subtotal
               properties:
                 cliente_id:
                   type: integer
@@ -181,12 +189,19 @@ paths:
                   format: date
                   description: Fecha de emisión de la factura
                   example: "2025-01-13"
-                monto:
+                subtotal:
                   type: number
                   format: float
-                  description: Monto total de la factura
+                  description: Subtotal de la factura (base gravable antes de IVA)
                   minimum: 0.01
-                  example: 150000.50
+                  example: 1000000
+                iva_porcentaje:
+                  type: number
+                  format: float
+                  description: Porcentaje de IVA a aplicar (0, 5 o 19). Default 19
+                  enum: [0, 5, 19]
+                  default: 19
+                  example: 19
                 items:
                   type: array
                   description: Lista de items/productos incluidos en la factura
@@ -221,7 +236,7 @@ paths:
                     $ref: '#/components/schemas/Factura'
               examples:
                 factura_con_items:
-                  summary: Factura con múltiples items creada
+                  summary: Factura con múltiples items creada (IVA 19%)
                   value:
                     success: true
                     message: "Factura creada exitosamente"
@@ -230,19 +245,19 @@ paths:
                       cliente_id: 1
                       numero_factura: "F-20250113-A3B2C4D5"
                       fecha_emision: "2025-01-13"
-                      monto: 1500000
+                      subtotal: 1000000
+                      iva_porcentaje: 19
+                      iva_valor: 190000
+                      total: 1190000
                       estado: "EMITIDA"
                       items:
                         - descripcion: "Servicio de Consultoría"
                           cantidad: 10
-                          precio_unitario: 150000
-                        - descripcion: "Soporte Técnico"
-                          cantidad: 5
                           precio_unitario: 100000
                       created_at: "2025-01-13T10:30:00.000Z"
                       updated_at: "2025-01-13T10:30:00.000Z"
                 factura_sin_items:
-                  summary: Factura sin items creada
+                  summary: Factura sin IVA (exenta)
                   value:
                     success: true
                     message: "Factura creada exitosamente"
@@ -251,7 +266,10 @@ paths:
                       cliente_id: 2
                       numero_factura: "F-20250113-B4C5D6E7"
                       fecha_emision: "2025-01-13"
-                      monto: 500000
+                      subtotal: 500000
+                      iva_porcentaje: 0
+                      iva_valor: 0
+                      total: 500000
                       estado: "EMITIDA"
                       items: []
                       created_at: "2025-01-13T10:35:00.000Z"
@@ -278,11 +296,16 @@ paths:
                   value:
                     success: false
                     error: "Fecha de emisión inválida"
-                monto_invalido:
-                  summary: Monto debe ser mayor a 0
+                subtotal_invalido:
+                  summary: Subtotal debe ser mayor a 0
                   value:
                     success: false
-                    error: "Monto debe ser mayor a 0"
+                    error: "Subtotal debe ser mayor a 0"
+                iva_invalido:
+                  summary: IVA porcentaje inválido
+                  value:
+                    success: false
+                    error: "IVA porcentaje debe ser 0, 5, 19%"
         '422':
           description: Error de lógica de negocio (cliente no existe)
           content:
@@ -583,11 +606,26 @@ components:
           format: date
           description: Fecha de emisión de la factura
           example: "2025-01-13"
-        monto:
+        subtotal:
           type: number
           format: float
-          description: Monto total de la factura
-          example: 150000.50
+          description: Subtotal de la factura (base gravable antes de IVA)
+          example: 1000000
+        iva_porcentaje:
+          type: number
+          format: float
+          description: Porcentaje de IVA aplicado
+          example: 19
+        iva_valor:
+          type: number
+          format: float
+          description: Valor calculado del IVA
+          example: 190000
+        total:
+          type: number
+          format: float
+          description: Monto total de la factura (subtotal + IVA)
+          example: 1190000
         estado:
           type: string
           description: Estado de la factura

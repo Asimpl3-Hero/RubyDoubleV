@@ -72,8 +72,11 @@ class FacturasController < Sinatra::Base
     factura = use_case.execute(
       cliente_id: data['cliente_id'],
       fecha_emision: data['fecha_emision'],
-      monto: data['monto'],
-      items: data['items'] || []
+      subtotal: data['subtotal'],
+      iva_porcentaje: data['iva_porcentaje'] || 19,
+      items: data['items'] || [],
+      # Backward compatibility
+      monto: data['monto']
     )
 
     status 201

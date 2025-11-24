@@ -12,7 +12,10 @@ module Infrastructure
           cliente_id: factura.cliente_id,
           numero_factura: factura.numero_factura,
           fecha_emision: factura.fecha_emision,
-          monto: factura.monto,
+          subtotal: factura.subtotal,
+          iva_porcentaje: factura.iva_porcentaje,
+          iva_valor: factura.iva_valor,
+          total: factura.total,
           estado: factura.estado,
           items: factura.items
         )
@@ -64,7 +67,8 @@ module Infrastructure
           cliente_id: model.cliente_id,
           numero_factura: model.numero_factura,
           fecha_emision: model.fecha_emision,
-          monto: model.monto.to_f,
+          subtotal: model.subtotal.to_f,
+          iva_porcentaje: model.iva_porcentaje.to_f,
           estado: model.estado,
           items: model.items || [],
           created_at: model.created_at,

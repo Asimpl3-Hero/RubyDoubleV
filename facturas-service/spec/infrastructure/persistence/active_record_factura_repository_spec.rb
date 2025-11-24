@@ -15,7 +15,10 @@ RSpec.describe Infrastructure::Persistence::ActiveRecordFacturaRepository do
       cliente_id: 10,
       numero_factura: 'F-20250113-ABC123',
       fecha_emision: Date.today,
-      monto: 1500.50,
+      subtotal: 1500.50,
+      iva_porcentaje: 19.0,
+      iva_valor: 285.10,
+      total: 1785.60,
       estado: 'EMITIDA',
       items: [{ descripcion: 'Producto A', cantidad: 2 }].to_json,
       created_at: Time.now,
@@ -29,7 +32,8 @@ RSpec.describe Infrastructure::Persistence::ActiveRecordFacturaRepository do
         cliente_id: 10,
         numero_factura: 'F-20250113-ABC123',
         fecha_emision: Date.today,
-        monto: 1500.50,
+        subtotal: 1500.50,
+        iva_porcentaje: 19,
         items: [{ descripcion: 'Producto A', cantidad: 2 }]
       )
 
@@ -38,7 +42,10 @@ RSpec.describe Infrastructure::Persistence::ActiveRecordFacturaRepository do
           cliente_id: 10,
           numero_factura: 'F-20250113-ABC123',
           fecha_emision: Date.today,
-          monto: 1500.50,
+          subtotal: 1500.50,
+          iva_porcentaje: 19.0,
+          iva_valor: 285.10,
+          total: 1785.60,
           estado: 'EMITIDA'
         )
       ).and_return(factura_model)

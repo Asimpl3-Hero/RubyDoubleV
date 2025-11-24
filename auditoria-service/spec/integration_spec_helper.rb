@@ -67,8 +67,8 @@ RSpec.configure do |config|
       mongo_client = Mongo::Client.new(['localhost:27017'], options)
       mongo_client[:audit_events].delete_many
       mongo_client.close
-    rescue Mongo::Error::NoServerAvailable, Mongo::Error::OperationFailure => e
-      # Skip cleanup if MongoDB is not available or auth failed
+    rescue Mongo::Error::NoServerAvailable, Mongo::Error::OperationFailure, NoMethodError => e
+      # Skip cleanup if MongoDB is not available, auth failed, or using mocks
     end
   end
 

@@ -14,7 +14,11 @@ module Application
         @auditoria_service_url = auditoria_service_url
       end
 
-      def execute(cliente_id:, fecha_emision:, monto:, items: [])
+      def execute(cliente_id:, fecha_emision:, subtotal: nil, iva_porcentaje: 19, items: [], monto: nil)
+        # Handle backward compatibility: if monto is provided but not subtotal
+        subtotal_value = subtotal || monto
+        raise ArgumentError, 'Se requiere subtotal o monto' unless subtotal_value
+
         # Parse date if it's a string
         fecha_emision_parsed = fecha_emision.is_a?(String) ? Date.parse(fecha_emision) : fecha_emision
 
@@ -23,7 +27,8 @@ module Application
         factura = Domain::Entities::Factura.new(
           cliente_id: cliente_id,
           fecha_emision: fecha_emision_parsed,
-          monto: monto.to_f,
+          subtotal: subtotal_value.to_f,
+          iva_porcentaje: iva_porcentaje.to_f,
           items: items
         )
 
@@ -40,7 +45,7 @@ module Application
           entity_type: 'factura',
           entity_id: saved_factura.id,
           action: 'CREATE',
-          details: "Factura #{saved_factura.numero_factura} creada para cliente #{cliente_id}. Monto: #{monto}",
+          details: "Factura #{saved_factura.numero_factura} creada para cliente #{cliente_id}. Subtotal: #{saved_factura.subtotal}, IVA (#{saved_factura.iva_porcentaje}%): #{saved_factura.iva_valor}, Total: #{saved_factura.total}",
           status: 'SUCCESS'
         )
 

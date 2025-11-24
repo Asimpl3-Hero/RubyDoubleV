@@ -10,12 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 1) do
+ActiveRecord::Schema[7.2].define(version: 2) do
   create_table "facturas", force: :cascade do |t|
     t.integer "cliente_id", null: false
     t.string "numero_factura", null: false
     t.date "fecha_emision", null: false
-    t.decimal "monto", precision: 10, scale: 2, null: false
+    t.decimal "subtotal", precision: 10, scale: 2, null: false
+    t.decimal "iva_porcentaje", precision: 5, scale: 2, null: false, default: "19.0"
+    t.decimal "iva_valor", precision: 10, scale: 2, null: false, default: "0.0"
+    t.decimal "total", precision: 10, scale: 2, null: false, default: "0.0"
     t.string "estado", default: "EMITIDA", null: false
     t.text "items"
     t.datetime "created_at", null: false
@@ -23,5 +26,6 @@ ActiveRecord::Schema[7.2].define(version: 1) do
     t.index ["cliente_id"], name: "index_facturas_on_cliente_id"
     t.index ["fecha_emision"], name: "index_facturas_on_fecha_emision"
     t.index ["numero_factura"], name: "index_facturas_on_numero_factura", unique: true
+    t.index ["total"], name: "index_facturas_on_total"
   end
 end
