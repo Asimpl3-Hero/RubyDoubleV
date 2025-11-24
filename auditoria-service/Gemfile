@@ -16,6 +16,9 @@ gem 'jwt', '~> 2.7'
 # JSON
 gem 'json', '~> 2.6'
 
+# CORS support for Swagger UI
+gem 'rack-cors', '~> 2.0'
+
 # Environment variables
 gem 'dotenv', '~> 2.8'
 

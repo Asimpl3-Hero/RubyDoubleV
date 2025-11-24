@@ -34,10 +34,14 @@ services:
       - MONGO_USERNAME=${MONGO_USERNAME:-admin}
       - MONGO_PASSWORD=${MONGO_PASSWORD:-factumarket_secure_2025}
       - RACK_ENV=${RACK_ENV:-development}
+      # JWT Configuration
+      - SERVICE_NAME=auditoria-service
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       - mongodb
     volumes:
       - ./auditoria-service:/app
+      - ./shared:/app/shared
     networks:
       - factumarket-network
     command: bundle exec puma config.ru -p ${AUDITORIA_PORT:-4003} -e ${RACK_ENV:-development}

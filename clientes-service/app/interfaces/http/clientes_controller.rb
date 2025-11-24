@@ -127,6 +127,44 @@ class ClientesController < Sinatra::Base
     { success: false, error: e.message }.to_json
   end
 
+  # Auth token endpoint - Generate JWT for testing in Swagger (GET for easy browser access)
+  get '/auth/token' do
+    token = ServiceJWT.generate(service_name: 'swagger-test-client')
+    decoded = ServiceJWT.validate(token)
+
+    status 200
+    {
+      success: true,
+      token: token,
+      expires_at: decoded[:expires_at].iso8601,
+      expires_in_seconds: ServiceJWT::EXPIRATION_MINUTES * 60
+    }.to_json
+  end
+
+  # Auth token endpoint - Generate JWT for testing in Swagger (POST)
+  post '/auth/token' do
+    data = begin
+      JSON.parse(request.body.read)
+    rescue
+      {}
+    end
+
+    service_name = data['service_name'] || 'swagger-test-client'
+
+    token = ServiceJWT.generate(service_name: service_name)
+    decoded = ServiceJWT.validate(token)
+
+    status 200
+    {
+      success: true,
+      message: 'Token generado exitosamente',
+      token: token,
+      expires_at: decoded[:expires_at].iso8601,
+      expires_in_seconds: ServiceJWT::EXPIRATION_MINUTES * 60,
+      usage: "Copia el token y úsalo en el botón 'Authorize' de Swagger UI"
+    }.to_json
+  end
+
   # Health check endpoint
   get '/health' do
     status 200

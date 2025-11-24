@@ -64,6 +64,8 @@ servers:
     description: Servidor Docker interno
 
 tags:
+  - name: auth
+    description: Autenticación y generación de tokens JWT
   - name: clientes
     description: Operaciones sobre clientes
   - name: health
@@ -73,6 +75,64 @@ security:
   - BearerAuth: []
 
 paths:
+  /auth/token:
+    post:
+      tags:
+        - auth
+      summary: Generar token JWT de prueba
+      description: |
+        Genera un token JWT válido para probar los endpoints protegidos desde Swagger UI.
+
+        **Uso:**
+        1. Ejecuta este endpoint
+        2. Copia el token de la respuesta
+        3. Click en "Authorize" (arriba a la derecha)
+        4. Pega el token y click en "Authorize"
+        5. Ahora puedes probar los demás endpoints
+
+        **Nota:** El token expira en 5 minutos.
+      operationId: generateToken
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_name:
+                  type: string
+                  description: Nombre del servicio emisor (opcional)
+                  example: swagger-test-client
+      responses:
+        '200':
+          description: Token generado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Token generado exitosamente
+                  token:
+                    type: string
+                    description: Token JWT para usar en Authorization header
+                    example: eyJhbGciOiJIUzI1NiJ9...
+                  expires_at:
+                    type: string
+                    format: date-time
+                    example: "2025-01-13T12:05:00Z"
+                  expires_in_seconds:
+                    type: integer
+                    example: 300
+                  usage:
+                    type: string
+                    example: "Copia el token y úsalo en el botón 'Authorize' de Swagger UI"
+
   /clientes:
     post:
       tags:
